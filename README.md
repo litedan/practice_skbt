@@ -15,11 +15,7 @@ frontend/    UI (пока пусто)
 
 Поток заявки: **Создана → На проверке (HR) → На согласовании (руководитель отдела) → Одобрена / Отклонена**.
 
-Две БД: `kedo_main` (бизнес) и `kedo_log` (аудит).
-
 ## Запуск backend
-
-Нужны PostgreSQL и две базы: `kedo_main`, `kedo_log`.
 
 ```bash
 cd backend
@@ -56,4 +52,3 @@ Health: http://127.0.0.1:8000/health
 | GET | `/api/v1/dictionaries/*` |
 | POST | `/api/v1/documents/{id}/sign` (заглушка) |
 
-Авторизация: `Authorization: Bearer <access_token>`.
