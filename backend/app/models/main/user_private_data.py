@@ -1,13 +1,8 @@
-"""
-Изолированное хранение персональных данных (ПД).
-
-Доступ к этой таблице строго контролируется ролями
-и логируется в sensitive_acces_log (LogBD).
-"""
+"""Изолированное хранение персональных данных (ПД)."""
 
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy import Date, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import MainBase
@@ -23,19 +18,18 @@ class UserPrivateData(MainBase):
         nullable=False,
     )
 
-    passport: Mapped[str | None] = mapped_column(String(20))
-    inn: Mapped[str | None] = mapped_column(String(12))
-    snils: Mapped[str | None] = mapped_column(String(14))
-    bank_account: Mapped[str | None] = mapped_column(String(20))
-    reg_address: Mapped[str | None] = mapped_column(String(500))
-    military_id: Mapped[str | None] = mapped_column(String(50))
-    account_number: Mapped[str | None] = mapped_column(String(20))
-    bik: Mapped[str | None] = mapped_column(String(9))
-    bank_reliever: Mapped[str | None] = mapped_column(String(255))
-    correspondent: Mapped[str | None] = mapped_column(String(20))
-    kpp: Mapped[str | None] = mapped_column(String(9))
-    contact_number: Mapped[str | None] = mapped_column(String(20))
+    passport: Mapped[str | None] = mapped_column(Text)
+    inn: Mapped[str | None] = mapped_column(Text)
+    snils: Mapped[str | None] = mapped_column(Text)
+    bank_account: Mapped[str | None] = mapped_column(Text)
+    military_id: Mapped[str | None] = mapped_column(Text)
+    account_number: Mapped[str | None] = mapped_column(Text)
+    bik: Mapped[str | None] = mapped_column(Text)
+    bank_receiver: Mapped[str | None] = mapped_column(Text)
+    correspondent_account: Mapped[str | None] = mapped_column(Text)
+    kpp: Mapped[str | None] = mapped_column(Text)
+    contract_number: Mapped[str | None] = mapped_column(Text)
     dismissal_date: Mapped[date | None] = mapped_column(Date)
-    personal_date_deletion_date: Mapped[date | None] = mapped_column(Date)
+    personal_data_deletion_date: Mapped[date | None] = mapped_column(Date)
 
     user: Mapped["User"] = relationship(back_populates="private_data")

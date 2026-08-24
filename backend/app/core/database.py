@@ -2,12 +2,13 @@
 Асинхронные подключения к PostgreSQL.
 
 Контур разделён на две независимые БД:
-- MainBD  — бизнес-сущности (заявки, пользователи, справочники)
+- MainBD  — бизнес-сущности (схема app)
 - LogBD   — аудит, auth-логи, доступ к ПД, системные события
 """
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -20,9 +21,13 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+APP_SCHEMA = "app"
+
 
 class MainBase(DeclarativeBase):
-    """Базовый класс ORM-моделей MainBD."""
+    """Базовый класс ORM-моделей MainBD (схема app)."""
+
+    metadata = MetaData(schema=APP_SCHEMA)
 
 
 class LogBase(DeclarativeBase):
@@ -39,7 +44,6 @@ def _create_engine(url: str, *, echo: bool) -> AsyncEngine:
     )
 
 
-# --- Движки ---
 main_engine: AsyncEngine = _create_engine(
     settings.main_database_url,
     echo=settings.debug,
@@ -49,7 +53,6 @@ log_engine: AsyncEngine = _create_engine(
     echo=settings.debug,
 )
 
-# --- Фабрики сессий ---
 MainSessionLocal = async_sessionmaker(
     bind=main_engine,
     class_=AsyncSession,
@@ -67,7 +70,6 @@ LogSessionLocal = async_sessionmaker(
 
 
 async def get_main_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency: сессия MainBD с автоматическим rollback при ошибке."""
     async with MainSessionLocal() as session:
         try:
             yield session
@@ -78,7 +80,6 @@ async def get_main_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_log_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency: сессия LogBD с автоматическим rollback при ошибке."""
     async with LogSessionLocal() as session:
         try:
             yield session

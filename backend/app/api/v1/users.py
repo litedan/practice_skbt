@@ -11,7 +11,7 @@ from app.core.exceptions import ForbiddenError
 from app.core.rbac import can_read_user_profile
 from app.schemas.user import UserMeRead, UserRead
 from app.schemas.user_private_data import UserPrivateDataRead, UserPrivateDataUpdate
-from app.services.user_presenter import build_user_me_read
+from app.services.user_presenter import build_user_me_read, build_user_read
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -28,12 +28,11 @@ async def get_user(
     current_user: CurrentUser,
     user_service: UserServiceDep,
 ) -> UserRead:
-    """Получение публичного профиля. Сотрудник — только свой; HR/Admin — любой."""
-    if not can_read_user_profile(current_user, user_id):
-        raise ForbiddenError("Нет прав на просмотр профиля пользователя")
-
+    """Профиль: свой / HR и admin — любой / руководитель — сотрудники своего отдела."""
     user = await user_service.get_by_id(user_id)
-    return UserRead.model_validate(user)
+    if not can_read_user_profile(current_user, user):
+        raise ForbiddenError("Нет прав на просмотр профиля пользователя")
+    return build_user_read(user)
 
 
 @router.get("/{user_id}/private-data", response_model=UserPrivateDataRead)

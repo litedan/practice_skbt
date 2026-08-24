@@ -1,19 +1,17 @@
 """Проверка прав доступа на основе RBAC."""
 
 from app.core.exceptions import ForbiddenError
-from app.core.permissions import ROLE_PERMISSIONS, Permission, RoleCode
+from app.core.permissions import POSITION_TO_ROLE, ROLE_PERMISSIONS, Permission, RoleCode
 from app.models.main.user import User
 
 
 def get_user_role_code(user: User) -> RoleCode:
-    """Возвращает код роли пользователя (fallback — employee)."""
-    if user.role is None:
+    if user.position is None:
         return RoleCode.EMPLOYEE
-    return RoleCode(user.role.code)
+    return POSITION_TO_ROLE.get(user.position.name, RoleCode.EMPLOYEE)
 
 
 def has_permission(user: User, permission: Permission) -> bool:
-    """Проверяет наличие разрешения у пользователя."""
     role_code = get_user_role_code(user)
     return permission in ROLE_PERMISSIONS.get(role_code, frozenset())
 
@@ -31,10 +29,22 @@ def ensure_permission(user: User, permission: Permission) -> None:
         raise ForbiddenError("Недостаточно прав для выполнения операции")
 
 
-def can_read_user_profile(actor: User, target_user_id: int) -> bool:
-    if actor.id == target_user_id:
+def same_department(actor: User, target: User) -> bool:
+    return (
+        actor.department_id is not None
+        and target.department_id is not None
+        and actor.department_id == target.department_id
+    )
+
+
+def can_read_user_profile(actor: User, target: User) -> bool:
+    if actor.id == target.id:
         return has_permission(actor, Permission.USERS_READ_SELF)
-    return has_permission(actor, Permission.USERS_READ_ANY)
+    if has_permission(actor, Permission.USERS_READ_ANY):
+        return True
+    if has_permission(actor, Permission.USERS_READ_DEPARTMENT) and same_department(actor, target):
+        return True
+    return False
 
 
 def can_read_private_data(actor: User, target_user_id: int) -> bool:

@@ -65,7 +65,7 @@ async def create_request(
     service: RequestServiceDep,
     client: ClientInfoDep,
 ) -> RequestRead:
-    """Создание новой кадровой заявки (статус «Новая»)."""
+    """Создание новой кадровой заявки (статус «Создана»)."""
     return await service.create_request(
         current_user=current_user,
         payload=payload,
@@ -82,7 +82,7 @@ async def update_request(
     service: RequestServiceDep,
     client: ClientInfoDep,
 ) -> RequestRead:
-    """Обновление заявки: HR — статус/checker; сотрудник — comment (только «Новая»)."""
+    """HR — проверка; руководитель — согласование; сотрудник — comment в статусе «Создана»."""
     return await service.update_request(
         current_user=current_user,
         request_id=request_id,

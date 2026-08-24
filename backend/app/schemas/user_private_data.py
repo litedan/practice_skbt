@@ -8,20 +8,19 @@ from app.schemas.common import ORMModel
 
 
 class UserPrivateDataBase(ORMModel):
-    passport: str | None = Field(default=None, max_length=20)
-    inn: str | None = Field(default=None, max_length=12)
-    snils: str | None = Field(default=None, max_length=14)
-    bank_account: str | None = Field(default=None, max_length=20)
-    reg_address: str | None = Field(default=None, max_length=500)
-    military_id: str | None = Field(default=None, max_length=50)
-    account_number: str | None = Field(default=None, max_length=20)
-    bik: str | None = Field(default=None, max_length=9)
-    bank_reliever: str | None = Field(default=None, max_length=255)
-    correspondent: str | None = Field(default=None, max_length=20)
-    kpp: str | None = Field(default=None, max_length=9)
-    contact_number: str | None = Field(default=None, max_length=20)
+    passport: str | None = None
+    inn: str | None = None
+    snils: str | None = None
+    bank_account: str | None = None
+    military_id: str | None = None
+    account_number: str | None = None
+    bik: str | None = None
+    bank_receiver: str | None = None
+    correspondent_account: str | None = None
+    kpp: str | None = None
+    contract_number: str | None = None
     dismissal_date: date | None = None
-    personal_date_deletion_date: date | None = None
+    personal_data_deletion_date: date | None = None
 
 
 class UserPrivateDataRead(UserPrivateDataBase):
@@ -31,4 +30,5 @@ class UserPrivateDataRead(UserPrivateDataBase):
 
 class UserPrivateDataUpdate(UserPrivateDataBase):
     """PUT — частичное обновление ПД (все поля опциональны)."""
+
     pass

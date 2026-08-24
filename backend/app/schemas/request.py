@@ -1,17 +1,10 @@
 """Схемы кадровых заявок."""
 
-from datetime import date, datetime
+from datetime import datetime
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from app.schemas.common import ORMModel
-
-
-def _validate_date_range(date_from: date | None, date_to: date | None) -> None:
-    if (date_from is None) ^ (date_to is None):
-        raise ValueError("date_from и date_to должны быть указаны вместе")
-    if date_from is not None and date_to is not None and date_from > date_to:
-        raise ValueError("date_from не может быть позже date_to")
 
 
 class StatusBrief(ORMModel):
@@ -22,40 +15,25 @@ class StatusBrief(ORMModel):
 class RequestTypeBrief(ORMModel):
     id: int
     name: str
+    file_path: str | None = None
 
 
 class UserBrief(ORMModel):
     id: int
     full_name: str
-    email: str
+    email: str | None = None
 
 
 class RequestCreate(ORMModel):
     request_type_id: int
     comment: str | None = Field(default=None, max_length=5000)
-    date_from: date | None = None
-    date_to: date | None = None
-
-    @model_validator(mode="after")
-    def validate_dates(self) -> "RequestCreate":
-        _validate_date_range(self.date_from, self.date_to)
-        return self
 
 
 class RequestUpdate(ORMModel):
-    """PATCH — HR меняет статус/checker; сотрудник может обновить comment/dates своей «Новой» заявки."""
-
     status_id: int | None = None
     comment: str | None = Field(default=None, max_length=5000)
-    checker_id: int | None = None
-    date_from: date | None = None
-    date_to: date | None = None
-
-    @model_validator(mode="after")
-    def validate_dates(self) -> "RequestUpdate":
-        if self.date_from is not None and self.date_to is not None and self.date_from > self.date_to:
-            raise ValueError("date_from не может быть позже date_to")
-        return self
+    reviewer_id: int | None = None
+    approver_id: int | None = None
 
 
 class DocumentFileRead(ORMModel):
@@ -67,18 +45,18 @@ class DocumentFileRead(ORMModel):
 class RequestRead(ORMModel):
     id: int
     comment: str | None
-    date_from: date | None
-    date_to: date | None
-    creator_id: int
-    checker_id: int | None
+    employee_id: int
+    reviewer_id: int | None
+    approver_id: int | None
     status_id: int
     request_type_id: int
     created_at: datetime
     updated_at: datetime
     status: StatusBrief
     request_type: RequestTypeBrief
-    creator: UserBrief | None = None
-    checker: UserBrief | None = None
+    employee: UserBrief | None = None
+    reviewer: UserBrief | None = None
+    approver: UserBrief | None = None
 
 
 class RequestDetailRead(RequestRead):
@@ -87,7 +65,9 @@ class RequestDetailRead(RequestRead):
 
 class RequestStatsRead(ORMModel):
     total: int
-    new: int
-    in_progress: int
+    created: int
+    in_review: int
+    in_approval: int
     approved: int
     rejected: int
+    closed: int

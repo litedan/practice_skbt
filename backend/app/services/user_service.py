@@ -14,7 +14,9 @@ class UserService:
 
     async def get_by_id(self, user_id: int) -> User:
         result = await self._session.execute(
-            select(User).options(selectinload(User.role)).where(User.id == user_id)
+            select(User)
+            .options(selectinload(User.position), selectinload(User.department))
+            .where(User.id == user_id)
         )
         user = result.scalar_one_or_none()
         if user is None:

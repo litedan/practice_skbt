@@ -1,15 +1,16 @@
 """Схемы пользователя."""
 
-from datetime import date, datetime
+from datetime import date
 
-from pydantic import EmailStr, Field
+from pydantic import EmailStr
 
+from app.core.permissions import RoleCode
 from app.schemas.common import ORMModel
-from app.schemas.role import RoleRead
+from app.schemas.dictionary import DictionaryItem
 
 
 class UserBase(ORMModel):
-    email: EmailStr
+    email: EmailStr | None = None
     full_name: str
     phone: str | None = None
     birth_date: date | None = None
@@ -21,14 +22,13 @@ class UserBase(ORMModel):
 
 class UserRead(UserBase):
     id: int
-    role_id: int
-    role: RoleRead
+    role: RoleCode
     is_blocked: bool
-    blocked_at: datetime | None = None
+    blocked_at: date | None = None
     block_reason: str | None = None
+    department: DictionaryItem | None = None
+    position: DictionaryItem | None = None
 
 
 class UserMeRead(UserRead):
-    """Профиль текущего пользователя (/users/me)."""
-
     permissions: list[str]

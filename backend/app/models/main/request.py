@@ -1,8 +1,6 @@
 """Кадровые заявки сотрудников."""
 
-from datetime import date
-
-from sqlalchemy import Date, ForeignKey, Text
+from sqlalchemy import ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import MainBase
@@ -14,20 +12,35 @@ class Request(MainBase, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     comment: Mapped[str | None] = mapped_column(Text)
-    date_from: Mapped[date | None] = mapped_column(Date)
-    date_to: Mapped[date | None] = mapped_column(Date)
-    creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    checker_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
-    status_id: Mapped[int] = mapped_column(ForeignKey("statuses.id"), nullable=False)
-    request_type_id: Mapped[int] = mapped_column(ForeignKey("request_types.id"), nullable=False)
 
-    creator: Mapped["User"] = relationship(
-        back_populates="created_requests",
-        foreign_keys=[creator_id],
+    employee_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
-    checker: Mapped["User | None"] = relationship(
-        back_populates="checked_requests",
-        foreign_keys=[checker_id],
+    reviewer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    approver_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    status_id: Mapped[int] = mapped_column(
+        ForeignKey("statuses.id", ondelete="SET NULL"),
+        nullable=False,
+        index=True,
+    )
+    request_type_id: Mapped[int] = mapped_column(
+        ForeignKey("request_types.id", ondelete="SET NULL"),
+        nullable=False,
+    )
+
+    employee: Mapped["User"] = relationship(
+        back_populates="employee_requests",
+        foreign_keys=[employee_id],
+    )
+    reviewer: Mapped["User | None"] = relationship(
+        back_populates="reviewed_requests",
+        foreign_keys=[reviewer_id],
+    )
+    approver: Mapped["User | None"] = relationship(
+        back_populates="approved_requests",
+        foreign_keys=[approver_id],
     )
     status: Mapped["Status"] = relationship(back_populates="requests")
     request_type: Mapped["RequestType"] = relationship(back_populates="requests")

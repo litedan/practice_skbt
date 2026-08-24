@@ -4,7 +4,7 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -29,10 +29,12 @@ if db_target == "log":
     target_metadata = LogBase.metadata
     database_url = settings.log_database_url
     version_locations = ["alembic/versions/log"]
+    version_table_schema = None
 else:
     target_metadata = MainBase.metadata
     database_url = settings.main_database_url
     version_locations = ["alembic/versions/main"]
+    version_table_schema = "app"
 
 
 def run_migrations_offline() -> None:
@@ -40,6 +42,8 @@ def run_migrations_offline() -> None:
         url=database_url,
         target_metadata=target_metadata,
         version_locations=version_locations,
+        version_table_schema=version_table_schema,
+        include_schemas=True,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
@@ -54,6 +58,8 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         version_locations=version_locations,
+        version_table_schema=version_table_schema,
+        include_schemas=True,
         compare_type=True,
     )
 
@@ -72,6 +78,9 @@ async def run_async_migrations() -> None:
     )
 
     async with connectable.connect() as connection:
+        if db_target != "log":
+            await connection.execute(text("CREATE SCHEMA IF NOT EXISTS app"))
+            await connection.commit()
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
