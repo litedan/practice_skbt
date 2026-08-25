@@ -1,8 +1,6 @@
 """Сервис авторизации: login / refresh / logout."""
 
-from datetime import UTC, datetime
-
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,13 +14,13 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.models.main.refresh_token import RefreshToken
 from app.models.main.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.audit_service import AuditService
 
 
 class AuthService:
+
     def __init__(self, main_session: AsyncSession, audit_service: AuditService) -> None:
         self._main_session = main_session
         self._audit = audit_service
@@ -62,16 +60,14 @@ class AuthService:
             ip_address=ip_address,
             user_agent=user_agent,
         )
-        return await self._issue_tokens(user)
+        return self._issue_tokens(user)
 
     async def refresh(self, refresh_token: str) -> TokenResponse:
-        stored = await self._get_active_refresh(refresh_token)
-        user = await self._get_user_by_id(stored.user_id)
+        payload = self._decode_refresh_payload(refresh_token)
+        user = await self._get_user_by_id(int(payload["sub"]))
         if user is None or user.is_blocked:
             raise UnauthorizedError("Пользователь не найден или заблокирован")
-
-        stored.revoked_at = datetime.now(UTC)
-        return await self._issue_tokens(user)
+        return self._issue_tokens(user)
 
     async def logout(
         self,
@@ -82,20 +78,10 @@ class AuthService:
         ip_address: str | None,
         user_agent: str | None,
     ) -> None:
-        now = datetime.now(UTC)
-        if all_sessions:
-            await self._main_session.execute(
-                update(RefreshToken)
-                .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
-                .values(revoked_at=now)
-            )
-        elif refresh_token:
-            stored = await self._get_active_refresh(refresh_token)
-            if stored.user_id != user.id:
+        if refresh_token:
+            payload = self._decode_refresh_payload(refresh_token)
+            if payload.get("sub") != str(user.id):
                 raise UnauthorizedError("Refresh-токен принадлежит другому пользователю")
-            stored.revoked_at = now
-        else:
-            raise UnauthorizedError("Передайте refresh_token или all_sessions=true")
 
         await self._audit.log_auth_attempt(
             email=user.email or "",
@@ -122,20 +108,17 @@ class AuthService:
             raise UnauthorizedError("Пользователь не найден или заблокирован")
         return user
 
-    async def _issue_tokens(self, user: User) -> TokenResponse:
+    def _issue_tokens(self, user: User) -> TokenResponse:
         subject = str(user.id)
         role_code = get_user_role_code(user)
-        refresh, jti, expires_at = create_refresh_token(subject)
-        self._main_session.add(
-            RefreshToken(user_id=user.id, jti=jti, expires_at=expires_at)
-        )
-        await self._main_session.flush()
+        refresh, _, _ = create_refresh_token(subject)
         return TokenResponse(
             access_token=create_access_token(subject, extra_claims={"role": role_code}),
             refresh_token=refresh,
         )
 
-    async def _get_active_refresh(self, refresh_token: str) -> RefreshToken:
+    @staticmethod
+    def _decode_refresh_payload(refresh_token: str) -> dict:
         try:
             payload = decode_token(refresh_token)
         except Exception as exc:
@@ -143,19 +126,9 @@ class AuthService:
 
         if payload.get("type") != TOKEN_TYPE_REFRESH:
             raise UnauthorizedError("Ожидается refresh-токен")
-
-        jti = payload.get("jti")
-        if not jti:
+        if not payload.get("sub"):
             raise UnauthorizedError("Невалидный refresh-токен")
-
-        result = await self._main_session.execute(
-            select(RefreshToken).where(RefreshToken.jti == jti)
-        )
-        stored = result.scalar_one_or_none()
-        now = datetime.now(UTC)
-        if stored is None or stored.revoked_at is not None or stored.expires_at < now:
-            raise UnauthorizedError("Refresh-токен отозван или истёк")
-        return stored
+        return payload
 
     def _user_options(self):
         return (selectinload(User.position), selectinload(User.department))

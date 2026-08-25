@@ -1,4 +1,6 @@
-"""Кадровые заявки: CRUD, файлы, HR-статистика."""
+"""
+Кадровые заявки: CRUD, файлы, HR-статистика.
+"""
 
 from typing import Annotated
 
@@ -35,6 +37,10 @@ async def list_requests(
     service: RequestServiceDep,
     status_id: int | None = Query(default=None),
     request_type_id: int | None = Query(default=None),
+    employee_id: int | None = Query(
+        default=None,
+        description="HR/руководитель: заявки сотрудника"
+    ),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[RequestRead]:
@@ -43,6 +49,7 @@ async def list_requests(
         current_user=current_user,
         status_id=status_id,
         request_type_id=request_type_id,
+        employee_id=employee_id,
         skip=skip,
         limit=limit,
     )
@@ -82,7 +89,11 @@ async def update_request(
     service: RequestServiceDep,
     client: ClientInfoDep,
 ) -> RequestRead:
-    """HR — проверка; руководитель — согласование; сотрудник — comment в статусе «Создана»."""
+    """
+    HR — проверка;
+    руководитель — согласование;
+    сотрудник — comment в статусе «Создана».
+    """
     return await service.update_request(
         current_user=current_user,
         request_id=request_id,

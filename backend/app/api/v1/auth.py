@@ -28,7 +28,7 @@ async def refresh_token(
     payload: RefreshRequest,
     auth_service: AuthServiceDep,
 ) -> TokenResponse:
-    """Ротация пары access/refresh. Старый refresh отзывается."""
+    """Выдача новой пары access/refresh по валидному refresh JWT."""
     return await auth_service.refresh(payload.refresh_token)
 
 
@@ -40,11 +40,10 @@ async def logout(
     client: ClientInfoDep,
 ) -> MessageResponse:
     """
-    Выход из системы.
+    Выход из системы (запись в auth_log).
 
-    Передайте `refresh_token`, чтобы отозвать текущую сессию,
-    или `all_sessions=true`, чтобы отозвать все refresh-токены пользователя.
-    Access-токен перестанет приниматься после истечения TTL.
+    Refresh-токены stateless (не хранятся в MainBD). Клиент должен удалить
+    сохранённые токены; access-токен перестанет работать после истечения TTL.
     """
     await auth_service.logout(
         user=current_user,

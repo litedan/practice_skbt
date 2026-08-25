@@ -16,6 +16,7 @@ from app.core.database import get_log_session, get_main_session
 from app.core.permissions import Permission
 from app.core.rbac import ensure_permission
 from app.models.main.user import User
+from app.services.audit_query_service import AuditQueryService
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.document_service import DocumentService
@@ -68,11 +69,18 @@ def get_auth_service(main_db: MainDB, audit_service: AuditServiceDep) -> AuthSer
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 
 
-def get_user_service(main_db: MainDB) -> UserService:
-    return UserService(main_db)
+def get_user_service(main_db: MainDB, audit_service: AuditServiceDep) -> UserService:
+    return UserService(main_db, audit_service)
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+
+
+def get_audit_query_service(log_db: LogDB) -> AuditQueryService:
+    return AuditQueryService(log_db)
+
+
+AuditQueryServiceDep = Annotated[AuditQueryService, Depends(get_audit_query_service)]
 
 
 def get_private_data_service(

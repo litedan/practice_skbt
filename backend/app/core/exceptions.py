@@ -1,7 +1,12 @@
 """Кастомные исключения и обработчики ошибок FastAPI."""
 
+import traceback
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+
+from app.core.database import LogSessionLocal
+from app.services.audit_service import AuditService
 
 
 class AppError(Exception):
@@ -44,6 +49,28 @@ class ConflictError(AppError):
         super().__init__(message, status_code=status.HTTP_409_CONFLICT, code="conflict")
 
 
+async def _write_system_event(
+    *,
+    endpoint: str | None,
+    error_message: str,
+    stack_trace: str | None,
+    event_type: str,
+) -> None:
+    """Best-effort запись в LogBD; ошибки логирования не должны ломать ответ."""
+    try:
+        async with LogSessionLocal() as session:
+            audit = AuditService(session)
+            await audit.log_system_event(
+                endpoint=endpoint,
+                error_message=error_message,
+                stack_trace=stack_trace,
+                event_type=event_type,
+            )
+            await session.commit()
+    except Exception:
+        pass
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Регистрирует единообразные JSON-ответы на ошибки."""
 
@@ -55,8 +82,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_error_handler(_: Request, exc: Exception) -> JSONResponse:
-        # В production здесь также пишем в system_events_log
+    async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        await _write_system_event(
+            endpoint=str(request.url.path),
+            error_message=str(exc),
+            stack_trace=traceback.format_exc(),
+            event_type="unhandled_exception",
+        )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "Внутренняя ошибка сервера", "code": "internal_error"},

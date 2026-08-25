@@ -1,0 +1,9 @@
+# Dev-пользователи (пароль у всех: Password123!)
+# employee@kedo.local  — Работник
+# manager@kedo.local   — Руководитель
+# hr@kedo.local        — HR
+# admin@kedo.local     — Администратор
+#
+# После docker init с фейковыми хешами:
+#   python scripts/fix_password_hashes.py
+# (ставит Password123! всем пользователям + создаёт @kedo.local при отсутствии)

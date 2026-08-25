@@ -29,6 +29,7 @@ class Permission(StrEnum):
     USERS_READ_DEPARTMENT = "users:read_department"
     USERS_READ_ANY = "users:read_any"
     USERS_BLOCK = "users:block"
+    USERS_UPDATE_ANY = "users:update_any"
 
     PRIVATE_DATA_READ_SELF = "private_data:read_self"
     PRIVATE_DATA_UPDATE_SELF = "private_data:update_self"
@@ -99,6 +100,7 @@ ROLE_PERMISSIONS: dict[RoleCode, frozenset[Permission]] = {
             Permission.USERS_READ_SELF,
             Permission.USERS_READ_ANY,
             Permission.USERS_BLOCK,
+            Permission.USERS_UPDATE_ANY,
             Permission.DICTIONARIES_READ,
             Permission.AUDIT_READ,
             Permission.SYSTEM_MONITOR,

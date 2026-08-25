@@ -1,0 +1,599 @@
+openapi: 3.0.3
+info:
+  title: KEDO API
+  description: |
+    Кадровый электронный документооборот.
+
+    Liveness без префикса API: `GET /health`.
+
+    **Роли** (по `positions.name`):
+    - `Работник` → employee
+    - `HR` → hr
+    - `Руководитель` → manager (заявки своего отдела, согласование)
+    - `Администратор` → admin (мониторинг, без ПД и workflow заявок)
+
+    **Жизненный цикл заявки:**
+    Создана → На проверке (HR) → На согласовании (руководитель) → Одобрена → Закрыта.
+    Отклонение возможно на проверке (HR) и на согласовании (руководитель).
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000/api/v1
+    description: Local
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Users
+  - name: Requests
+  - name: Documents
+  - name: Notifications
+  - name: Dictionaries
+  - name: Health
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      security: []
+      summary: Liveness (путь относительно корня сервера — см. описание)
+      description: Фактический URL `http://127.0.0.1:8000/health`, не под `/api/v1`.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  service: { type: string, example: KEDO }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Вход
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Пара JWT
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401":
+          description: Неверные данные или пользователь заблокирован
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Обновление токенов (старый refresh отзывается)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshRequest" }
+      responses:
+        "200":
+          description: Новая пара токенов
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401":
+          description: Refresh отозван или истёк
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход
+      description: |
+        Нужен Bearer access-токен.
+        Передайте `refresh_token` для одной сессии или `all_sessions=true` для всех.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LogoutRequest" }
+      responses:
+        "200":
+          description: Сессия отозвана
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "401":
+          description: Нет авторизации
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Профиль текущего пользователя (роль + permissions)
+      responses:
+        "200":
+          description: Профиль
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserMeRead" }
+
+  /users/{user_id}:
+    get:
+      tags: [Users]
+      summary: Публичный профиль
+      description: Свой профиль; HR/admin — любой; руководитель — сотрудники своего отдела.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserRead" }
+        "403": { description: Нет прав }
+
+  /users/{user_id}/private-data:
+    get:
+      tags: [Users]
+      summary: Персональные данные (логируется в LogBD)
+      description: Владелец или HR. Руководитель и admin доступа к ПД не имеют.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserPrivateDataRead" }
+    put:
+      tags: [Users]
+      summary: Обновление ПД
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserPrivateDataUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserPrivateDataRead" }
+
+  /requests/stats:
+    get:
+      tags: [Requests]
+      summary: Счётчики заявок (HR — все, руководитель — отдел)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RequestStatsRead" }
+
+  /requests:
+    get:
+      tags: [Requests]
+      summary: Список заявок
+      parameters:
+        - name: status_id
+          in: query
+          schema: { type: integer }
+        - name: request_type_id
+          in: query
+          schema: { type: integer }
+        - name: skip
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RequestRead" }
+    post:
+      tags: [Requests]
+      summary: Создать заявку (статус «Создана»)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RequestRead" }
+
+  /requests/{request_id}:
+    get:
+      tags: [Requests]
+      summary: Детали заявки
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RequestDetailRead" }
+    patch:
+      tags: [Requests]
+      summary: Обновить заявку / сменить статус
+      description: |
+        Сотрудник: только `comment` в статусе «Создана».
+        HR: Создана → На проверке → На согласовании / Отклонена; Одобрена → Закрыта.
+        Руководитель: На согласовании → Одобрена / Отклонена (свой отдел).
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RequestRead" }
+
+  /requests/{request_id}/files:
+    get:
+      tags: [Requests]
+      summary: Список файлов заявки
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DocumentFileRead" }
+    post:
+      tags: [Requests]
+      summary: Загрузить файл (автор, статусы Создана / На проверке)
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentFileRead" }
+
+  /requests/{request_id}/files/{file_id}:
+    get:
+      tags: [Requests]
+      summary: Скачать файл
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: Файл
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+
+  /documents/{document_id}/sign:
+    post:
+      tags: [Documents]
+      summary: Подписать документ (заглушка)
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "202":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentSignResponse" }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Список уведомлений текущего пользователя
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NotificationRead" }
+
+  /notifications/{notification_id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Пометить прочитанным
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+
+  /dictionaries/departments:
+    get:
+      tags: [Dictionaries]
+      summary: Отделы
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DictionaryItem" }
+
+  /dictionaries/positions:
+    get:
+      tags: [Dictionaries]
+      summary: Должности / роли
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DictionaryItem" }
+
+  /dictionaries/request-types:
+    get:
+      tags: [Dictionaries]
+      summary: Типы заявок
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RequestTypeItem" }
+
+  /dictionaries/statuses:
+    get:
+      tags: [Dictionaries]
+      summary: Статусы заявок
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DictionaryItem" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema: { type: integer }
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema: { type: integer }
+    FileId:
+      name: file_id
+      in: path
+      required: true
+      schema: { type: integer }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail: { type: string }
+        code: { type: string }
+
+    MessageResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+
+    LogoutRequest:
+      type: object
+      properties:
+        refresh_token: { type: string, nullable: true }
+        all_sessions: { type: boolean, default: false }
+
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, example: bearer }
+
+    RoleCode:
+      type: string
+      enum: [employee, hr, manager, admin]
+
+    DictionaryItem:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+
+    RequestTypeItem:
+      allOf:
+        - $ref: "#/components/schemas/DictionaryItem"
+        - type: object
+          properties:
+            file_path: { type: string, nullable: true }
+
+    UserRead:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string, format: email, nullable: true }
+        full_name: { type: string }
+        phone: { type: string, nullable: true }
+        birth_date: { type: string, format: date, nullable: true }
+        city: { type: string, nullable: true }
+        hire_date: { type: string, format: date, nullable: true }
+        department_id: { type: integer, nullable: true }
+        position_id: { type: integer, nullable: true }
+        role: { $ref: "#/components/schemas/RoleCode" }
+        is_blocked: { type: boolean }
+        blocked_at: { type: string, format: date, nullable: true }
+        block_reason: { type: string, nullable: true }
+        department: { $ref: "#/components/schemas/DictionaryItem", nullable: true }
+        position: { $ref: "#/components/schemas/DictionaryItem", nullable: true }
+
+    UserMeRead:
+      allOf:
+        - $ref: "#/components/schemas/UserRead"
+        - type: object
+          properties:
+            permissions:
+              type: array
+              items: { type: string }
+
+    UserPrivateDataUpdate:
+      type: object
+      properties:
+        passport: { type: string, nullable: true }
+        inn: { type: string, nullable: true }
+        snils: { type: string, nullable: true }
+        bank_account: { type: string, nullable: true }
+        military_id: { type: string, nullable: true }
+        account_number: { type: string, nullable: true }
+        bik: { type: string, nullable: true }
+        bank_receiver: { type: string, nullable: true }
+        correspondent_account: { type: string, nullable: true }
+        kpp: { type: string, nullable: true }
+        contract_number: { type: string, nullable: true }
+        dismissal_date: { type: string, format: date, nullable: true }
+        personal_data_deletion_date: { type: string, format: date, nullable: true }
+
+    UserPrivateDataRead:
+      allOf:
+        - $ref: "#/components/schemas/UserPrivateDataUpdate"
+        - type: object
+          required: [id, user_id]
+          properties:
+            id: { type: integer }
+            user_id: { type: integer }
+
+    UserBrief:
+      type: object
+      properties:
+        id: { type: integer }
+        full_name: { type: string }
+        email: { type: string, nullable: true }
+
+    RequestCreate:
+      type: object
+      required: [request_type_id]
+      properties:
+        request_type_id: { type: integer }
+        comment: { type: string, nullable: true }
+
+    RequestUpdate:
+      type: object
+      properties:
+        status_id: { type: integer, nullable: true }
+        comment: { type: string, nullable: true }
+        reviewer_id: { type: integer, nullable: true }
+        approver_id: { type: integer, nullable: true }
+
+    DocumentFileRead:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        request_id: { type: integer }
+
+    RequestRead:
+      type: object
+      properties:
+        id: { type: integer }
+        comment: { type: string, nullable: true }
+        employee_id: { type: integer }
+        reviewer_id: { type: integer, nullable: true }
+        approver_id: { type: integer, nullable: true }
+        status_id: { type: integer }
+        request_type_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        status: { $ref: "#/components/schemas/DictionaryItem" }
+        request_type: { $ref: "#/components/schemas/RequestTypeItem" }
+        employee: { $ref: "#/components/schemas/UserBrief", nullable: true }
+        reviewer: { $ref: "#/components/schemas/UserBrief", nullable: true }
+        approver: { $ref: "#/components/schemas/UserBrief", nullable: true }
+
+    RequestDetailRead:
+      allOf:
+        - $ref: "#/components/schemas/RequestRead"
+        - type: object
+          properties:
+            document_files:
+              type: array
+              items: { $ref: "#/components/schemas/DocumentFileRead" }
+
+    RequestStatsRead:
+      type: object
+      properties:
+        total: { type: integer }
+        created: { type: integer }
+        in_review: { type: integer }
+        in_approval: { type: integer }
+        approved: { type: integer }
+        rejected: { type: integer }
+        closed: { type: integer }
+
+    DocumentSignResponse:
+      type: object
+      properties:
+        document_id: { type: integer }
+        status: { type: string, example: stub }
+        message: { type: string }
+        signed_at: { type: string, format: date-time, nullable: true }
+
+    NotificationRead:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        message: { type: string }
+        is_read: { type: boolean }
+        created_at: { type: string, format: date-time }
+        user_id: { type: integer }
+        request_id: { type: integer, nullable: true }

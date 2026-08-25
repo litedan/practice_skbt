@@ -126,17 +126,6 @@ def upgrade() -> None:
         CREATE INDEX idx_notifications_user_unread
             ON notifications(user_id, is_read, created_at DESC);
 
-        CREATE TABLE refresh_tokens (
-            id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            jti TEXT NOT NULL UNIQUE,
-            expires_at TIMESTAMPTZ NOT NULL,
-            revoked_at TIMESTAMPTZ,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        );
-
-        CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-
         CREATE OR REPLACE FUNCTION set_updated_at()
         RETURNS TRIGGER AS $$
         BEGIN
