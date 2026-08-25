@@ -29,7 +29,7 @@ export default function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
 
-              <Route element={<ProtectedRoute roles={['hr', 'admin']} />}>
+              <Route element={<ProtectedRoute roles={['hr', 'manager']} />}>
                 <Route path="/hr" element={<HrPanelPage />} />
                 <Route path="/hr/employees/:id" element={<HrEmployeePage />} />
               </Route>

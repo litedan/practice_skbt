@@ -1,29 +1,42 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import type { Role } from '../data/mock'
+import { errorMessage } from '../lib/format'
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, isAuth, ready } = useAuth()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole] = useState<Role>('employee')
+  const [email, setEmail] = useState('employee@kedo.local')
+  const [password, setPassword] = useState('Password123!')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  function onSubmit(e: FormEvent) {
+  if (ready && isAuth) return <Navigate to="/" replace />
+
+  async function onSubmit(e: FormEvent) {
     e.preventDefault()
-    login(role)
-    navigate('/')
+    setError('')
+    setPending(true)
+    try {
+      await login(email, password)
+      navigate('/')
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={onSubmit}>
+      <form className="login-card" onSubmit={(e) => void onSubmit(e)}>
         <h1>Практика</h1>
         <p className="subtitle">Личный кабинет сотрудника</p>
 
         <div className="field">
           <label>Email</label>
-          <input type="email" defaultValue="example@mail.ru" required />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
 
         <div className="field">
@@ -31,7 +44,9 @@ export function LoginPage() {
           <div className="password-wrap">
             <input
               type={showPassword ? 'text' : 'password'}
-              defaultValue="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={8}
               required
             />
             <button
@@ -42,12 +57,7 @@ export function LoginPage() {
             >
               {showPassword ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 3l18 18"
-                    stroke="#9CA3AF"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
+                  <path d="M3 3l18 18" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
                   <path
                     d="M10.6 10.7a2 2 0 0 0 2.8 2.8"
                     stroke="#9CA3AF"
@@ -71,31 +81,24 @@ export function LoginPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
-                    stroke="#9CA3AF"
-                    strokeWidth="1.5"
-                  />
+                  <circle cx="12" cy="12" r="3" stroke="#9CA3AF" strokeWidth="1.5" />
                 </svg>
               )}
             </button>
           </div>
         </div>
 
-        <div className="field">
-          <label>Войти как (для демо)</label>
-          <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
-            <option value="employee">Сотрудник</option>
-            <option value="hr">HR</option>
-            <option value="admin">Администратор</option>
-          </select>
-        </div>
+        {error && <p className="form-error">{error}</p>}
 
-        <button className="btn btn-primary" style={{ width: '100%' }} type="submit">
-          Войти
+        <button className="btn btn-primary" style={{ width: '100%' }} type="submit" disabled={pending}>
+          {pending ? 'Вход…' : 'Войти'}
         </button>
+
+        <p className="muted" style={{ marginTop: 16, fontSize: 12 }}>
+          employee@kedo.local · manager@kedo.local · hr@kedo.local · admin@kedo.local
+          <br />
+          пароль Password123!
+        </p>
       </form>
     </div>
   )

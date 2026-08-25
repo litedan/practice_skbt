@@ -1,66 +1,110 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { requests } from '../data/mock'
+import { dictionariesApi, requestsApi } from '../api/endpoints'
 import { StatusBadge } from '../components/StatusBadge'
-
-const filters = ['Все', 'На рассмотрении', 'Одобрено', 'Отклонено'] as const
+import { useAuth } from '../auth/AuthContext'
+import { formatDate } from '../lib/format'
+import { hasPermission } from '../lib/permissions'
+import type { DictionaryItem, RequestRead } from '../types/api'
 
 export function RequestsPage() {
-  const [filter, setFilter] = useState<(typeof filters)[number]>('Все')
+  const { user } = useAuth()
+  const [filterId, setFilterId] = useState<number | 'all'>('all')
+  const [statuses, setStatuses] = useState<DictionaryItem[]>([])
+  const [list, setList] = useState<RequestRead[]>([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  const list = useMemo(() => {
-    if (filter === 'Все') return requests
-    return requests.filter((r) => r.status === filter)
-  }, [filter])
+  const canCreate = hasPermission(user, 'requests:create')
+  const title = hasPermission(user, 'requests:read_any')
+    ? 'Заявки'
+    : hasPermission(user, 'requests:read_department')
+      ? 'Заявки отдела'
+      : 'Мои заявки'
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      setError('')
+      try {
+        const [statusList, requests] = await Promise.all([
+          dictionariesApi.statuses(),
+          requestsApi.list(filterId === 'all' ? undefined : { status_id: filterId }),
+        ])
+        if (cancelled) return
+        setStatuses(statusList)
+        setList(requests)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Ошибка загрузки')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [filterId])
+
+  const filters = useMemo(() => [{ id: 'all' as const, name: 'Все' }, ...statuses], [statuses])
 
   return (
     <>
       <div className="page-header">
-        <h1 className="page-title">Мои заявки</h1>
-        <Link to="/requests/new" className="btn btn-primary">
-          Новая заявка
-        </Link>
+        <h1 className="page-title">{title}</h1>
+        {canCreate && (
+          <Link to="/requests/new" className="btn btn-primary">
+            Новая заявка
+          </Link>
+        )}
       </div>
 
       <div className="tabs">
-        {filters.map((f) => (
+        {filters.map((item) => (
           <button
-            key={f}
-            className={filter === f ? 'tab active' : 'tab'}
-            onClick={() => setFilter(f)}
+            key={item.id}
+            className={filterId === item.id ? 'tab active' : 'tab'}
+            onClick={() => setFilterId(item.id)}
           >
-            {f}
+            {item.name}
           </button>
         ))}
       </div>
 
+      {error && <p className="form-error">{error}</p>}
+
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Тип</th>
-              <th>Период</th>
-              <th>Дата</th>
-              <th>Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((item) => (
-              <tr key={item.id}>
-                <td>
-                  <Link to={`/requests/${item.id}`} style={{ fontWeight: 500, color: 'var(--primary)' }}>
-                    {item.type}
-                  </Link>
-                </td>
-                <td>{item.period}</td>
-                <td>{item.date}</td>
-                <td>
-                  <StatusBadge status={item.status} />
-                </td>
+        {loading && <p className="empty">Загрузка…</p>}
+        {!loading && list.length === 0 && <p className="empty">Заявок нет</p>}
+        {!loading && list.length > 0 && (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Тип</th>
+                <th>Сотрудник</th>
+                <th>Дата</th>
+                <th>Статус</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <Link to={`/requests/${item.id}`} style={{ fontWeight: 500, color: 'var(--primary)' }}>
+                      {item.request_type.name} #{item.id}
+                    </Link>
+                  </td>
+                  <td>{item.employee?.full_name ?? '—'}</td>
+                  <td>{formatDate(item.created_at)}</td>
+                  <td>
+                    <StatusBadge status={item.status.name} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </>
   )

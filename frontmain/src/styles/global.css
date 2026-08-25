@@ -394,6 +394,24 @@ textarea {
   font-size: 13px;
 }
 
+.form-error {
+  color: var(--bad-text);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.form-ok {
+  color: var(--ok-text);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
 @media (max-width: 1100px) {
   .grid-3,
   .grid-4 {

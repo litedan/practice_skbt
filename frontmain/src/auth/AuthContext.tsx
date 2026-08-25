@@ -1,32 +1,59 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { Role } from '../data/mock'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { login as loginRequest, logout as logoutRequest, usersApi } from '../api/endpoints'
+import { clearTokens, getAccessToken } from '../api/client'
+import type { Role, UserMe } from '../types/api'
 
 type AuthContextValue = {
   isAuth: boolean
+  ready: boolean
+  user: UserMe | null
   role: Role
-  login: (role?: Role) => void
-  logout: () => void
-  setRole: (role: Role) => void
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuth, setIsAuth] = useState(false)
-  const [role, setRole] = useState<Role>('employee')
+  const [user, setUser] = useState<UserMe | null>(null)
+  const [ready, setReady] = useState(false)
 
-  const value = useMemo(
+  const loadUser = useCallback(async () => {
+    if (!getAccessToken()) {
+      setUser(null)
+      return
+    }
+    const me = await usersApi.me()
+    setUser(me)
+  }, [])
+
+  useEffect(() => {
+    loadUser()
+      .catch(() => {
+        clearTokens()
+        setUser(null)
+      })
+      .finally(() => setReady(true))
+  }, [loadUser])
+
+  const value = useMemo<AuthContextValue>(
     () => ({
-      isAuth,
-      role,
-      login: (nextRole: Role = 'employee') => {
-        setRole(nextRole)
-        setIsAuth(true)
+      isAuth: Boolean(user),
+      ready,
+      user,
+      role: user?.role ?? 'employee',
+      login: async (email, password) => {
+        await loginRequest(email, password)
+        await loadUser()
       },
-      logout: () => setIsAuth(false),
-      setRole,
+      logout: async () => {
+        await logoutRequest()
+        setUser(null)
+      },
+      refreshUser: loadUser,
     }),
-    [isAuth, role],
+    [loadUser, ready, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

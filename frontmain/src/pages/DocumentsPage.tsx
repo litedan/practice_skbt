@@ -1,75 +1,95 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { documents } from '../data/mock'
-import { StatusBadge } from '../components/StatusBadge'
+import { requestsApi } from '../api/endpoints'
+import { errorMessage } from '../lib/format'
+import type { DocumentFile, RequestRead } from '../types/api'
 
-const filters = ['Все', 'На подпись', 'Подписанные'] as const
+async function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+type Row = DocumentFile & { requestType: string }
 
 export function DocumentsPage() {
-  const [filter, setFilter] = useState<(typeof filters)[number]>('Все')
+  const [rows, setRows] = useState<Row[]>([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  const list = documents.filter((doc) => {
-    if (filter === 'Все') return true
-    if (filter === 'На подпись') return Boolean(doc.needSign)
-    return !doc.needSign
-  })
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const list: RequestRead[] = await requestsApi.list()
+        const details = await Promise.all(list.map((item) => requestsApi.get(item.id)))
+        if (cancelled) return
+        setRows(
+          details.flatMap((req) =>
+            req.document_files.map((file) => ({ ...file, requestType: req.request_type.name })),
+          ),
+        )
+      } catch (err) {
+        if (!cancelled) setError(errorMessage(err))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <>
-      <h1 className="page-title">Документы</h1>
+      <h1 className="page-title">Вложения</h1>
+      <p className="muted">
+        Отдельного каталога документов в API нет. Здесь файлы, прикреплённые к заявкам.
+      </p>
 
-      <div className="tabs" style={{ marginTop: 20 }}>
-        {filters.map((f) => (
-          <button
-            key={f}
-            className={filter === f ? 'tab active' : 'tab'}
-            onClick={() => setFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      {error && <p className="form-error">{error}</p>}
 
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Документ</th>
-              <th>Дата</th>
-              <th>Статус</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((doc) => (
-              <tr key={doc.id}>
-                <td style={{ fontWeight: 500 }}>{doc.name}</td>
-                <td>{doc.date}</td>
-                <td>
-                  <StatusBadge status={doc.status} />
-                </td>
-                <td>
-                  <div className="actions">
-                    {doc.needSign && (
-                      <button className="btn btn-primary btn-sm" type="button">
-                        Подписать
-                      </button>
-                    )}
-                    <button className="link" type="button">
-                      PDF
-                    </button>
-                  </div>
-                </td>
+        {loading && <p className="empty">Загрузка…</p>}
+        {!loading && rows.length === 0 && <p className="empty">Вложений нет</p>}
+        {!loading && rows.length > 0 && (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Файл</th>
+                <th>Заявка</th>
+                <th>Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        <Link to="/requests" className="btn btn-secondary">
-          Назад к заявкам
-        </Link>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={`${row.request_id}-${row.id}`}>
+                  <td style={{ fontWeight: 500 }}>{row.name}</td>
+                  <td>
+                    <Link to={`/requests/${row.request_id}`} style={{ color: 'var(--primary)' }}>
+                      {row.requestType} #{row.request_id}
+                    </Link>
+                  </td>
+                  <td>
+                    <button
+                      className="link"
+                      type="button"
+                      onClick={() => {
+                        void requestsApi.download(row.request_id, row.id).then((blob) => saveBlob(blob, row.name))
+                      }}
+                    >
+                      Скачать
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </>
   )

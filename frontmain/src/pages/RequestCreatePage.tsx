@@ -1,76 +1,90 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { currentUser } from '../data/mock'
+import { dictionariesApi, requestsApi } from '../api/endpoints'
+import { errorMessage } from '../lib/format'
+import type { RequestTypeItem } from '../types/api'
 
 export function RequestCreatePage() {
   const navigate = useNavigate()
-  const [type, setType] = useState<'Отпуск' | 'Больничный'>('Отпуск')
+  const [types, setTypes] = useState<RequestTypeItem[]>([])
+  const [typeId, setTypeId] = useState<number | ''>('')
+  const [comment, setComment] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  function onSubmit(e: FormEvent) {
+  useEffect(() => {
+    dictionariesApi
+      .requestTypes()
+      .then((items) => {
+        setTypes(items)
+        if (items[0]) setTypeId(items[0].id)
+      })
+      .catch((err) => setError(errorMessage(err)))
+  }, [])
+
+  async function onSubmit(e: FormEvent) {
     e.preventDefault()
-    navigate('/requests')
+    if (typeId === '') return
+    setError('')
+    setPending(true)
+    try {
+      const created = await requestsApi.create({
+        request_type_id: typeId,
+        comment: comment.trim() || undefined,
+      })
+      if (file) await requestsApi.upload(created.id, file)
+      navigate(`/requests/${created.id}`)
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
     <>
       <h1 className="page-title">Новая заявка</h1>
 
-      <form className="card" style={{ maxWidth: 640, marginTop: 24 }} onSubmit={onSubmit}>
-        <div className="actions" style={{ marginBottom: 16 }}>
-          <button
-            type="button"
-            className={type === 'Отпуск' ? 'btn btn-primary' : 'btn btn-secondary'}
-            onClick={() => setType('Отпуск')}
-          >
-            Отпуск
-          </button>
-          <button
-            type="button"
-            className={type === 'Больничный' ? 'btn btn-primary' : 'btn btn-secondary'}
-            onClick={() => setType('Больничный')}
-          >
-            Больничный
-          </button>
-        </div>
+      <form className="card" style={{ maxWidth: 640, marginTop: 24 }} onSubmit={(e) => void onSubmit(e)}>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Бэкенд принимает тип заявки и комментарий. Период отпуска и черновик в API пока не предусмотрены.
+        </p>
 
-        {type === 'Отпуск' && (
-          <p style={{ color: 'var(--primary)', fontSize: 13, marginTop: 0 }}>
-            Доступно дней отпуска: {currentUser.vacationDays}
-          </p>
-        )}
-
-        {type === 'Отпуск' && (
-          <div className="field">
-            <label>Тип отпуска</label>
-            <select defaultValue="Ежегодный оплачиваемый">
-              <option>Ежегодный оплачиваемый</option>
-              <option>Без сохранения зарплаты</option>
-            </select>
-          </div>
-        )}
-
-        <div className="grid-2">
-          <div className="field">
-            <label>Дата начала</label>
-            <input type="date" defaultValue="2026-03-10" required />
-          </div>
-          <div className="field">
-            <label>Дата окончания</label>
-            <input type="date" defaultValue="2026-03-24" required />
-          </div>
+        <div className="field">
+          <label>Тип заявки</label>
+          <select value={typeId} onChange={(e) => setTypeId(Number(e.target.value))} required>
+            {types.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="field">
           <label>Комментарий</label>
-          <input defaultValue="Семейная поездка" />
+          <textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} />
         </div>
+
+        <div className="field">
+          <label>Файл (необязательно)</label>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <span className="muted">pdf, jpg, png, doc, docx · до 10 МБ</span>
+        </div>
+
+        {error && <p className="form-error">{error}</p>}
 
         <div className="actions">
           <Link to="/requests" className="btn btn-secondary">
-            Сохранить черновик
+            Отмена
           </Link>
-          <button className="btn btn-primary" type="submit">
-            Отправить
+          <button className="btn btn-primary" type="submit" disabled={pending || typeId === ''}>
+            {pending ? 'Отправка…' : 'Отправить'}
           </button>
         </div>
       </form>
