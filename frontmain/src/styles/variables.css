@@ -1,0 +1,18 @@
+:root {
+  --bg: #f7f8fa;
+  --white: #ffffff;
+  --primary: #2663eb;
+  --primary-soft: #eff6ff;
+  --text: #14161a;
+  --muted: #6b7280;
+  --border: #e5ebf2;
+  --ok-bg: #e6f7eb;
+  --ok-text: #1a7347;
+  --warn-bg: #fff7ed;
+  --warn-text: #b45309;
+  --bad-bg: #fdecec;
+  --bad-text: #b32020;
+  --radius: 12px;
+  --sidebar-w: 240px;
+  --font: Inter, system-ui, -apple-system, sans-serif;
+}
