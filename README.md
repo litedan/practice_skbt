@@ -36,7 +36,6 @@ practice_skbt/
 | **MainBD** | пользователи, заявки, уведомления | `hr_postgres` | **5434** (не 5432) |
 | **LogBD** | audit / auth / sensitive / system logs | `hr_logs_postgres` | **5433** |
 
-<<<<<<< HEAD
 > На Windows часто занят порт **5432** локальным PostgreSQL. В `docker-compose` для MainBD используй проброс `"5434:5432"`.
 
 Схема MainBD — канонический DDL в схеме `app` (departments, positions, users, requests, …).
@@ -197,8 +196,3 @@ python scripts/smoke_api.py
 4. **`malformed bcrypt hash`**  
    Не используй `passlib` с bcrypt 5.x — в проекте прямой вызов `bcrypt`.
 
-## Коммит / PR
-
-Перед коммитом не добавляй `.env` (секреты). В репозитории должен быть только `.env.example`.
-=======
->>>>>>> a15a5eb167c1b79caf80ce0b0af525602a09ae57
