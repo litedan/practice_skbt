@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Документы</title>
+    <link rel="stylesheet" href="styles/documents.css">
+</head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html" class="active">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <h1>Документы</h1>
+
+        <!-- Фильтры -->
+        <div class="filters">
+            <button class="filter-tab active" onclick="filterDocs('all')">Все</button>
+            <button class="filter-tab" onclick="filterDocs('pending')">На подпись</button>
+            <button class="filter-tab" onclick="filterDocs('signed')">Подписанные</button>
+        </div>
+
+        <!-- Таблица -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Дата</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="docs-table-body">
+                    <!-- Данные подставит JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Кнопка Назад -->
+        <button class="btn-back" onclick="goBack()">Назад</button>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // ВРЕМЕННАЯ ЗАТЫЧКА (TODO: Заменить на реальные API запросы к бэкенду)
+        // ==========================================
+        
+        // Данные о документах (придут из БД)
+        let docsData = [
+            { 
+                title: "Приказ о предоставлении отпуска", 
+                date: "05.03.2026", 
+                status: "На подпись", 
+                class: "pending",
+                actions: ['sign', 'edit', 'pdf'] // Кнопки: подписать, редактировать, скачать PDF
+            },
+            { 
+                title: "Заявление на отпуск", 
+                date: "05.03.2026", 
+                status: "Подписан", 
+                class: "signed",
+                actions: ['pdf']
+            },
+            { 
+                title: "Справка 2-НДФЛ", 
+                date: "20.01.2026", 
+                status: "Готово", 
+                class: "ready",
+                actions: ['pdf']
+            }
+        ];
+
+        // Функция для отрисовки таблицы с учетом фильтра
+        function renderTable(filter = 'all') {
+            const tbody = document.getElementById('docs-table-body');
+            tbody.innerHTML = ''; // Очищаем таблицу
+
+            docsData.forEach(doc => {
+                // Если фильтр не 'all' и статус не совпадает, пропускаем
+                if (filter !== 'all' && doc.class !== filter) {
+                    return;
+                }
+
+                const row = document.createElement('tr');
+                
+                // Генерируем HTML для кнопок действий
+                let actionsHtml = '<div class="actions">';
+                
+                if (doc.actions.includes('sign')) {
+                    actionsHtml += `<button class="btn-action">Подписать</button>`;
+                }
+                if (doc.actions.includes('edit')) {
+                    actionsHtml += `<button class="btn-action blue">Редактировать</button>`;
+                }
+                if (doc.actions.includes('pdf')) {
+                    actionsHtml += `<button class="btn-pdf">PDF</button>`;
+                }
+                
+                actionsHtml += '</div>';
+
+                row.innerHTML = `
+                    <td class="doc-title">${doc.title}</td>
+                    <td class="doc-date">${doc.date}</td>
+                    <td><span class="status ${doc.class}">${doc.status}</span></td>
+                    <td>${actionsHtml}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Функция переключения фильтров
+        function filterDocs(filterType) {
+            // Обновляем активный класс на кнопках
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Находим нажатую кнопку и делаем её активной
+            event.target.classList.add('active');
+
+            // Перерисовываем таблицу
+            renderTable(filterType);
+        }
+
+        // Функция для кнопки "Назад"
+        function goBack() {
+            // Возвращаем пользователя на предыдущую страницу в истории браузера
+            window.history.back();
+        }
+
+        // Первичная отрисовка при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => renderTable('all'));
+    </script>
+</body>
+</html>

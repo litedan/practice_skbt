@@ -36,6 +36,7 @@ practice_skbt/
 | **MainBD** | пользователи, заявки, уведомления | `hr_postgres` | **5434** (не 5432) |
 | **LogBD** | audit / auth / sensitive / system logs | `hr_logs_postgres` | **5433** |
 
+<<<<<<< HEAD
 > На Windows часто занят порт **5432** локальным PostgreSQL. В `docker-compose` для MainBD используй проброс `"5434:5432"`.
 
 Схема MainBD — канонический DDL в схеме `app` (departments, positions, users, requests, …).
@@ -76,6 +77,10 @@ LOG_DB_NAME=logs_db
 
 ### 3. Зависимости
 
+=======
+## Запуск backend
+
+>>>>>>> a15a5eb167c1b79caf80ce0b0af525602a09ae57
 ```bash
 cd backend
 python -m venv .venv
@@ -114,6 +119,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 | `hr@kedo.local` | HR |
 | `admin@kedo.local` | Администратор |
 
+<<<<<<< HEAD
 Логин:
 
 ```http
@@ -194,3 +200,5 @@ python scripts/smoke_api.py
 ## Коммит / PR
 
 Перед коммитом не добавляй `.env` (секреты). В репозитории должен быть только `.env.example`.
+=======
+>>>>>>> a15a5eb167c1b79caf80ce0b0af525602a09ae57

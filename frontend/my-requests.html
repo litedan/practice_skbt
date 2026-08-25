@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Мои заявки</title>
+    <link rel="stylesheet" href="styles/my-requests.css"></head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html" class="active">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        
+        <div class="page-header">
+            <h1>Мои заявки</h1>
+            <a href="new-request.html" class="btn-primary">Новая заявка</a>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="filters">
+            <button class="filter-tab active" onclick="filterRequests('all')">Все</button>
+            <button class="filter-tab" onclick="filterRequests('pending')">На рассмотрении</button>
+            <button class="filter-tab" onclick="filterRequests('approved')">Одобрено</button>
+            <button class="filter-tab" onclick="filterRequests('rejected')">Отклонено</button>
+        </div>
+
+        <!-- Таблица -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Период</th>
+                        <th>Дата подачи</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body">
+                    <!-- Данные подставит JS -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // ВРЕМЕННАЯ ЗАТЫЧКА (TODO: Заменить на реальные API запросы к бэкенду)
+        // ==========================================
+        
+        // Данные о заявках (придут из БД)
+        let requestsData = [
+    { id: 1, type: "Отпуск", period: "10.03 — 24.03.2026", date: "05.03.2026", status: "На рассмотрении", class: "pending" },
+    { id: 2, type: "Больничный", period: "01.02 — 05.02.2026", date: "01.02.2026", status: "Одобрено", class: "approved" },
+    { id: 3, type: "Отпуск", period: "20.12 — 03.01.2026", date: "10.12.2025", status: "Отклонено", class: "rejected" },
+    { id: 4, type: "Справка 2-НДФЛ", period: "—", date: "20.01.2026", status: "Готово", class: "ready" }
+];
+
+        function renderTable(filter = 'all') {
+    const tbody = document.getElementById('requests-table-body');
+    tbody.innerHTML = ''; 
+
+    requestsData.forEach(req => {
+        if (filter !== 'all' && req.class !== filter) {
+            return;
+        }
+
+        const row = document.createElement('tr');
+        
+        // Делаем строку кликабельной и передаем ID заявки в функцию
+        row.style.cursor = 'pointer';
+        row.onclick = () => openRequest(req.id);
+
+        row.innerHTML = `
+            <td>${req.type}</td>
+            <td class="request-date">${req.period}</td>
+            <td class="request-date">${req.date}</td>
+            <td><span class="status ${req.class}">${req.status}</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Функция перехода на страницу деталей
+function openRequest(id) {
+    // Переходим на страницу деталей, передавая ID в URL
+    window.location.href = `request-detail.html?id=${id}`;
+}
+
+        // Функция переключения фильтров
+        function filterRequests(filterType) {
+            // Обновляем активный класс на кнопках
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Находим нажатую кнопку и делаем её активной
+            event.target.classList.add('active');
+
+            // Перерисовываем таблицу
+            renderTable(filterType);
+        }
+
+        // Первичная отрисовка при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => renderTable('all'));
+    </script>
+</body>
+</html>

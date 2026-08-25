@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Карточка сотрудника</title>
+    <link rel="stylesheet" href="styles/employee-card.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html" class="active">HR</a>
+            <a href="admin.html">Админ</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <a href="hr.html" class="back-link">← Назад к панели HR</a>
+
+        <div class="header">
+            <div>
+                <h1>Карточка сотрудника</h1>
+                <p id="emp-subtitle">—</p>
+            </div>
+            <div class="hint">HR редактирует: должность, отдел, руководитель</div>
+        </div>
+
+        <div class="card">
+            <div class="grid-2">
+                <!-- Левая колонка (только просмотр) -->
+                <div>
+                    <div class="form-group">
+                        <label>ФИО - только просмотр</label>
+                        <input type="text" id="fio" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email - только просмотр</label>
+                        <input type="email" id="email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон - только просмотр</label>
+                        <input type="text" id="phone" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата рождения - только просмотр</label>
+                        <input type="text" id="birth-date" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Город - только просмотр</label>
+                        <input type="text" id="city" readonly>
+                    </div>
+                </div>
+
+                <!-- Правая колонка (редактируемая) -->
+                <div>
+                    <div class="form-group">
+                        <label>Отдел - можно менять</label>
+                        <input type="text" id="department" class="editable">
+                    </div>
+                    <div class="form-group">
+                        <label>Должность - можно менять</label>
+                        <input type="text" id="position" class="editable">
+                    </div>
+                    <div class="form-group">
+                        <label>Руководитель - можно менять</label>
+                        <input type="text" id="manager" class="editable">
+                    </div>
+                    <div class="form-group">
+                        <label>Дата поступления - только просмотр</label>
+                        <input type="text" id="hire-date" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Номер договора - только просмотр</label>
+                        <input type="text" id="contract-number" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensitive-block">
+                <button class="btn-sensitive">Показать ПДн (паспорт, ИНН, СНИЛС)</button>
+                <span class="sensitive-note">Запрос пишется в sensitive_access.log</span>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-primary">Сохранить изменения</button>
+                <button class="btn-secondary" onclick="window.history.back()">Отмена</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="comment-block">
+                <h3>При отклонении заявки — комментарий (обязательно)</h3>
+                <textarea rows="3" placeholder="Недостаточно дней отпуска / пересечение с утверждённым графиком"></textarea>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Читаем ID из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const employeeId = urlParams.get('id');
+
+        // Временная база сотрудников (та же, что и в hr.html)
+        const employees = [
+            { id: 14, fullName: "Иванов Иван Иванович", email: "ivanov@company.ru", phone: "+7 (999) 123-45-67", birthDate: "12.04.1992", city: "Москва", department: "Отдел продаж", position: "Менеджер", manager: "Сидоров П.П.", hireDate: "15.03.2022", contractNumber: "ТД-2022/118" },
+            { id: 15, fullName: "Козлова Мария Андреевна", email: "kozlova@company.ru", phone: "+7 (999) 765-43-21", birthDate: "03.07.1995", city: "Москва", department: "Отдел продаж", position: "Специалист", manager: "Сидоров П.П.", hireDate: "10.01.2023", contractNumber: "ТД-2023/045" },
+            { id: 16, fullName: "Смирнов Алексей Викторович", email: "smirnov@company.ru", phone: "+7 (999) 111-22-33", birthDate: "25.11.1990", city: "СПб", department: "IT", position: "Разработчик", manager: "Орлова Е.Н.", hireDate: "01.09.2021", contractNumber: "ТД-2021/112" },
+            { id: 17, fullName: "Орлова Елена Николаевна", email: "orlova@company.ru", phone: "+7 (999) 444-55-66", birthDate: "14.02.1988", city: "Москва", department: "IT", position: "Руководитель", manager: "—", hireDate: "20.05.2020", contractNumber: "ТД-2020/088" }
+        ];
+
+        // Ищем сотрудника (если нет ID — показываем первого)
+        const employee = employees.find(emp => emp.id == employeeId) || employees[0];
+
+        // Заполняем поля
+        document.getElementById('emp-subtitle').textContent = `${employee.fullName} · Id ${employee.id}`;
+        document.getElementById('fio').value = employee.fullName;
+        document.getElementById('email').value = employee.email;
+        document.getElementById('phone').value = employee.phone;
+        document.getElementById('birth-date').value = employee.birthDate;
+        document.getElementById('city').value = employee.city;
+        document.getElementById('department').value = employee.department;
+        document.getElementById('position').value = employee.position;
+        document.getElementById('manager').value = employee.manager;
+        document.getElementById('hire-date').value = employee.hireDate;
+        document.getElementById('contract-number').value = employee.contractNumber;
+    </script>
+</body>
+</html>

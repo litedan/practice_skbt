@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация - Практика</title>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+    <div class="card">
+        <h1>Практика</h1>
+        <p class="subtitle">Личный кабинет сотрудника</p>
+
+        <form action="#" method="POST">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="example@mail.ru" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    <!-- Иконка глаза (SVG) -->
+                    <span class="eye-icon" onclick="togglePassword()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Войти</button>
+            <a href="dashboard.html" class="submit-btn">Затычка (переход на главную)</a>
+        </form>
+    </div>
+
+    <!-- Небольшой скрипт для переключения видимости пароля -->
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+            } else {
+                passwordInput.type = 'password';
+            }
+        }
+    </script>
+</body>
+</html>

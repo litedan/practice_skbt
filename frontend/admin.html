@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Админ</title>
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="admin.html" class="active">Админ</a>
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+            <h1>Админ — Пользователи</h1>
+            <button class="btn-primary">Добавить пользователя</button>
+        </div>
+
+        <!-- Табы -->
+        <div class="filters">
+            <button class="filter-tab active">Пользователи</button>
+            <button class="filter-tab">Справочники</button>
+            <button class="filter-tab">Аудит</button>
+        </div>
+
+        <!-- Таблица -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Email</th>
+                        <th>Отдел</th>
+                        <th>Роль</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Иванов И.И.</td>
+                        <td>ivanov@company.ru</td>
+                        <td>Продажи</td>
+                        <td>Сотрудник</td>
+                        <td><span class="status active">Активен</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-action">Изменить</button>
+                                <button class="btn-action">Блок</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Петрова А.С.</td>
+                        <td>petrova@company.ru</td>
+                        <td>HR</td>
+                        <td>HR</td>
+                        <td><span class="status active">Активен</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-action">Изменить</button>
+                                <button class="btn-action">Блок</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Сидоров П.П.</td>
+                        <td>sidorov@company.ru</td>
+                        <td>Продажи</td>
+                        <td>Руководитель</td>
+                        <td><span class="status active">Активен</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-action">Изменить</button>
+                                <button class="btn-action">Блок</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Новиков К.Д.</td>
+                        <td>novikov@company.ru</td>
+                        <td>IT</td>
+                        <td>Сотрудник</td>
+                        <td><span class="status blocked">Заблокирован</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-action">Изменить</button>
+                                <button class="btn-action blue">Разблок</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Нижние карточки -->
+        <div class="bottom-cards">
+            <div class="info-card">
+                <h3>Справочники</h3>
+                <ul>
+                    <li>- Отделы (departmentsList)</li>
+                    <li>- Должности (positionList)</li>
+                    <li>- Типы заявок (request_types)</li>
+                    <li>- Статусы (statuses)</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Последний аудит</h3>
+                <ul>
+                    <li>auth_log - вход ivanov@... - 22.08 05:12</li>
+                    <li>audit_log - смена статуса заявки #124</li>
+                    <li>sensitive_access_log - просмотр ПДн</li>
+                    <li>system_events_log - генерация PDF</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Профиль</title>
+    <link rel="stylesheet" href="styles/profile.css"></head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html" class="active">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <h1>Профиль</h1>
+
+        <!-- Карточка основной информации -->
+        <div class="section-card">
+            <div style="display: flex; gap: 20px; margin-bottom: 24px;">
+                <div style="width: 64px; height: 64px; background-color: #dbeafe; border-radius: 50%;"></div>
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 700;">Иванов Иван Иванович</h2>
+                    <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Менеджер · Отдел продаж</p>
+                    <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Принят: 15.03.2022</p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" value="ivanov@company.ru" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Отдел</label>
+                    <input type="text" value="Отдел продаж" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <input type="text" value="+7 (999) 123-45-67" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Банковские реквизиты</label>
+                    <input type="text" value="40817810..." readonly>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary">Сохранить</button>
+                <button class="btn-secondary">Сменить пароль</button>
+            </div>
+        </div>
+
+        <!-- Личные данные -->
+        <div class="section-card">
+            <h3>Личные данные</h3>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Дата рождения</label>
+                    <input type="text" value="12.04.1992" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Должность</label>
+                    <input type="text" value="Менеджер" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Город</label>
+                    <input type="text" value="Москва" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Дата поступления</label>
+                    <input type="text" value="15.03.2022" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Персональные данные -->
+        <div class="section-card">
+            <h3>Персональные данные</h3>
+            <div class="access-note">
+                Доступ логируется (<a href="#">sensitive_access.log</a>)
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Паспорт</label>
+                    <div class="data-chip">4012 123456</div>
+                </div>
+                <div class="form-group">
+                    <label>Адрес регистрации</label>
+                    <div class="data-chip">г. Москва, ул. Ленина, 10</div>
+                </div>
+                <div class="form-group">
+                    <label>ИНН</label>
+                    <div class="data-chip">770123456789</div>
+                </div>
+                <div class="form-group">
+                    <label>Военный билет</label>
+                    <div class="data-chip">АБ 1234567</div>
+                </div>
+                <div class="form-group">
+                    <label>СНИЛС</label>
+                    <div class="data-chip">123-456-789 00</div>
+                </div>
+                <div class="form-group">
+                    <label>Номер договора</label>
+                    <div class="data-chip">ТД-2022/118</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Банковские реквизиты -->
+        <div class="section-card">
+            <h3>Банковские реквизиты</h3>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Номер счёта</label>
+                    <div class="data-chip">40817810099910004332</div>
+                </div>
+                <div class="form-group">
+                    <label>Корр. счёт</label>
+                    <div class="data-chip">30101810400000000225</div>
+                </div>
+                <div class="form-group">
+                    <label>БИК</label>
+                    <div class="data-chip">044525225</div>
+                </div>
+                <div class="form-group">
+                    <label>КПП</label>
+                    <div class="data-chip">773601001</div>
+                </div>
+                <div class="form-group" style="grid-column: span 1;">
+                    <label>Банк получатель</label>
+                    <div class="data-chip">ПАО Сбербанк</div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

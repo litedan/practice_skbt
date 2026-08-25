@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Новая заявка</title>
+    <link rel="stylesheet" href="styles/new-request.css"></head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html" class="active">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <h1>Новая заявка</h1>
+
+        <div class="form-card">
+            <form id="request-form">
+                
+                <!-- Переключатель типа -->
+                <div class="type-toggle">
+                    <button type="button" class="type-btn active" onclick="setType('vacation')">Отпуск</button>
+                    <button type="button" class="type-btn" onclick="setType('sick')">Больничный</button>
+                </div>
+
+                <!-- Доступные дни (показываются только для отпуска) -->
+                <div id="days-info" class="info-text">Доступно дней отпуска: 14</div>
+
+                <!-- Поле для отпуска -->
+                <div id="vacation-fields">
+                    <div class="form-group">
+                        <label>Тип отпуска</label>
+                        <select id="vacation-type">
+                            <option value="paid">Ежегодный оплачиваемый</option>
+                            <option value="unpaid">Без сохранения заработной платы</option>
+                            <option value="study">Учебный</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Поле для больничного (скрыто по умолчанию) -->
+                <div id="sick-fields" class="hidden">
+                    <div class="form-group">
+                        <label>Тип больничного</label>
+                        <select id="sick-type">
+                            <option value="regular">По болезни</option>
+                            <option value="maternity">По беременности и родам</option>
+                            <option value="childcare">По уходу за ребенком</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Даты -->
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label>Дата начала</label>
+                        <input type="date" id="start-date" value="2026-03-10">
+                    </div>
+                    <div class="form-group">
+                        <label>Дата окончания</label>
+                        <input type="date" id="end-date" value="2026-03-24">
+                    </div>
+                </div>
+
+                <!-- Комментарий -->
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <textarea id="comment" rows="1" placeholder="Введите комментарий">Семейная поездка</textarea>
+                </div>
+
+                <!-- Кнопки -->
+                <div class="button-group">
+                    <button type="button" class="btn-secondary">Сохранить черновик</button>
+                    <button type="submit" class="btn-primary">Отправить</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ТИПА
+        // ==========================================
+        
+        function setType(type) {
+            // Получаем элементы
+            const vacationFields = document.getElementById('vacation-fields');
+            const sickFields = document.getElementById('sick-fields');
+            const daysInfo = document.getElementById('days-info');
+            const buttons = document.querySelectorAll('.type-btn');
+
+            // Обновляем активную кнопку
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (type === 'vacation') {
+                buttons[0].classList.add('active');
+            } else {
+                buttons[1].classList.add('active');
+            }
+
+            // Показываем/скрываем соответствующие поля
+            if (type === 'vacation') {
+                vacationFields.classList.remove('hidden');
+                sickFields.classList.add('hidden');
+                daysInfo.classList.remove('hidden'); // Показываем дни отпуска
+            } else {
+                vacationFields.classList.add('hidden');
+                sickFields.classList.remove('hidden');
+                daysInfo.classList.add('hidden'); // Скрываем дни отпуска
+            }
+        }
+
+        // Обработка отправки формы (затычка)
+        document.getElementById('request-form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Предотвращаем перезагрузку страницы
+            
+            // Собираем данные (TODO: Заменить на fetch запрос к API)
+            const type = document.querySelector('.type-btn.active').textContent;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const comment = document.getElementById('comment').value;
+
+            console.log("Отправка заявки:", { type, startDate, endDate, comment });
+            
+            // Переход на страницу со списком заявок
+            window.location.href = 'requests.html';
+        });
+    </script>
+</body>
+</html>

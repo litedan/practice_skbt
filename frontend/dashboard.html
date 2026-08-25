@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Главная</title>
+    <link rel="stylesheet" href="styles/dashboard.css"></head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html" class="active">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        
+        <div class="header">
+            <div class="welcome-text">
+                <h1>Главная</h1>
+                <h2>Добро пожаловать, <span id="user-name">Иван</span>!</h2>
+                <p>Быстрый доступ к заявкам и документам</p>
+            </div>
+            <div class="user-info">
+                <div class="notif-badge">Уведомления: <b>2</b></div>
+                <div>
+                    <div class="name" id="full-name">Иванов И.И.</div>
+                    <div class="role" id="user-role">Менеджер · Отдел продаж</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточки действий -->
+        <div class="quick-actions">
+            <div class="action-card primary">
+                <h3>Подать заявку</h3>
+                <p>Отпуск или больничный</p>
+            </div>
+            <div class="action-card">
+                <h3>Заказать справку</h3>
+                <p>2-НДФЛ, с места работы</p>
+            </div>
+            <div class="action-card">
+                <h3>Подписать документ</h3>
+                <p><span id="docs-count">1</span> документ ожидает</p>
+            </div>
+        </div>
+
+        <!-- Инфо-блоки -->
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Остаток отпуска</h3>
+                <div class="days-left"><span id="vacation-days">14</span> дней</div>
+                <div class="hint">Ежегодный оплачиваемый</div>
+            </div>
+            <div class="info-card">
+                <h3>Уведомления</h3>
+                <ul class="notifications">
+                    <li>Заявка на отпуск одобрена</li>
+                    <li>Новый документ на подпись</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Таблица заявок -->
+        <div class="requests-table">
+            <div class="table-header">
+                <h3>Последние заявки</h3>
+                <a href="#">Все заявки</a>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Период</th>
+                        <th>Дата подачи</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-body">
+                    <!-- Сюда JS подставит данные из "затычки" -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // ВРЕМЕННАЯ ЗАТЫЧКА (TODO: Заменить на реальные API запросы к бэкенду)
+        // ==========================================
+        
+        // Данные пользователя (придут из БД после логина)
+        const userData = {
+            firstName: "Иван",
+            fullName: "Иванов И.И.",
+            role: "Менеджер · Отдел продаж",
+            vacationDays: 14,
+            docsCount: 1
+        };
+
+        // Данные о последних заявках (придут из БД)
+        const requestsData = [
+            { type: "Отпуск", period: "10.03 — 24.03.2026", date: "05.03.2026", status: "На рассмотрении", class: "pending" },
+            { type: "Больничный", period: "01.02 — 05.02.2026", date: "01.02.2026", status: "Одобрено", class: "approved" },
+            { type: "Справка 2-НДФЛ", period: "—", date: "20.01.2026", status: "Готово", class: "ready" }
+        ];
+
+        // Функция для отрисовки данных на странице
+        function renderDashboard() {
+            // Подставляем данные пользователя
+            document.getElementById('user-name').textContent = userData.firstName;
+            document.getElementById('full-name').textContent = userData.fullName;
+            document.getElementById('user-role').textContent = userData.role;
+            document.getElementById('vacation-days').textContent = userData.vacationDays;
+            document.getElementById('docs-count').textContent = userData.docsCount;
+
+            // Отрисовываем таблицу заявок
+            const tbody = document.getElementById('requests-body');
+            tbody.innerHTML = ''; // Очищаем перед отрисовкой
+
+            requestsData.forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${req.type}</td>
+                    <td>${req.period}</td>
+                    <td>${req.date}</td>
+                    <td><span class="status ${req.class}">${req.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Запускаем отрисовку при загрузке страницы
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+    </script>
+</body>
+</html>
