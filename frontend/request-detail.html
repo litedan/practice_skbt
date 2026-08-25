@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Заявка</title>
+    <style>
+        /* Базовые стили */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #111827;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Сайдбар */
+        .sidebar {
+            width: 240px;
+            background-color: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            color: #2563eb;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav a {
+            display: block;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #4b5563;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .nav a:hover {
+            background-color: #f3f4f6;
+        }
+
+        .nav a.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+
+        /* Основной контент */
+        .main-content {
+            flex-grow: 1;
+            padding: 32px 48px;
+            max-width: 1000px;
+        }
+
+        /* Заголовок и статус */
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            background-color: #fef3c7;
+            color: #b45309;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
+        
+        /* Стили для разных статусов бейджа */
+        .status-badge.approved {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        
+        .status-badge.rejected {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .status-badge.ready {
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Карточка деталей */
+        .detail-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            background-color: #ffffff;
+            margin-bottom: 32px;
+            display: flex;
+            gap: 40px;
+        }
+
+        /* Статусы */
+        .status-column {
+            width: 45%;
+        }
+
+        .status-column h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .status-list {
+            list-style: none;
+        }
+
+        .status-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .status-list li.current {
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .status-list li.current .status-action {
+            color: #2563eb;
+        }
+
+        .status-list li.completed {
+            color: #6b7280;
+        }
+
+        /* Бейджи времени */
+        .time-badge {
+            background-color: #eff6ff;
+            color: #2563eb;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .time-badge.empty {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        /* Данные заявки */
+        .info-column {
+            flex-grow: 1;
+        }
+
+        .info-column h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .info-group {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 12px 20px;
+            font-size: 14px;
+        }
+
+        .info-group dt {
+            color: #6b7280;
+        }
+
+        .info-group dd {
+            color: #111827;
+            font-weight: 500;
+        }
+
+        /* Кнопка Назад */
+        .btn-back {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-back:hover {
+            background-color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html">Главная</a>
+            <a href="my-requests.html" class="active">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        
+        <div class="page-header">
+            <div class="title-row">
+                <!-- ID для динамической вставки заголовка -->
+                <h1 id="detail-title">Заявка</h1>
+                <!-- ID для динамической вставки статуса -->
+                <span id="detail-status-badge" class="status-badge">Статус</span>
+            </div>
+            <!-- ID для динамической вставки даты подачи -->
+            <p class="subtitle" id="detail-subtitle">Подана: ...</p>
+        </div>
+
+        <!-- Карточка с деталями -->
+        <div class="detail-card">
+            
+            <!-- Колонка статусов -->
+            <div class="status-column">
+                <h3>Статус</h3>
+                <!-- Сюда JS вставит историю статусов -->
+                <ul class="status-list" id="status-history"></ul>
+            </div>
+
+            <!-- Колонка данных -->
+            <div class="info-column">
+                <h3>Данные заявки</h3>
+                <dl class="info-group">
+                    <dt>Тип</dt>
+                    <!-- ID для динамической вставки типа -->
+                    <dd id="detail-type">...</dd>
+                    
+                    <dt>Период</dt>
+                    <!-- ID для динамической вставки периода -->
+                    <dd id="detail-period">...</dd>
+                    
+                    <dt>Комментарий</dt>
+                    <!-- ID для динамической вставки комментария -->
+                    <dd id="detail-comment">...</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Кнопка Назад -->
+        <button class="btn-back" onclick="window.history.back()">Назад к заявкам</button>
+
+    </main>
+    
+    <!-- СКРИПТ ДЛЯ ДИНАМИЧЕСКОГО ЗАПОЛНЕНИЯ -->
+    <script>
+        // 1. Получаем ID из URL (?id=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestId = urlParams.get('id');
+
+        // 2. Временная база данных (ЗАТЫЧКА)
+        const allRequests = [
+            { 
+                id: 1, type: "Отпуск", period: "10.03 — 24.03.2026", date: "05.03.2026", status: "На рассмотрении", class: "pending", comment: "Семейная поездка",
+                history: [
+                    { name: "Создано", time: "05.03.2026, 10:24", state: "completed" },
+                    { name: "На согласовании", time: "05.03.2026, 10:25", state: "current" },
+                    { name: "Одобрено руководителем", time: "—", state: "empty" },
+                    { name: "Документ сформирован", time: "—", state: "empty" }
+                ]
+            },
+            { 
+                id: 2, type: "Больничный", period: "01.02 — 05.02.2026", date: "01.02.2026", status: "Одобрено", class: "approved", comment: "Грипп",
+                history: [
+                    { name: "Создано", time: "01.02.2026, 09:00", state: "completed" },
+                    { name: "На согласовании", time: "01.02.2026, 09:15", state: "completed" },
+                    { name: "Одобрено руководителем", time: "01.02.2026, 14:30", state: "current" },
+                    { name: "Документ сформирован", time: "—", state: "empty" }
+                ]
+            },
+            { 
+                id: 3, type: "Отпуск", period: "20.12 — 03.01.2026", date: "10.12.2025", status: "Отклонено", class: "rejected", comment: "Планы на Новый год",
+                history: [
+                    { name: "Создано", time: "10.12.2025, 12:00", state: "completed" },
+                    { name: "На согласовании", time: "10.12.2025, 12:05", state: "completed" },
+                    { name: "Одобрено руководителем", time: "11.12.2025, 09:00", state: "completed" },
+                    { name: "Отклонено HR", time: "11.12.2025, 11:00", state: "current" }
+                ]
+            },
+            { 
+                id: 4, type: "Справка 2-НДФЛ", period: "—", date: "20.01.2026", status: "Готово", class: "ready", comment: "",
+                history: [
+                    { name: "Создано", time: "20.01.2026, 10:00", state: "completed" },
+                    { name: "Документ сформирован", time: "20.01.2026, 10:05", state: "current" }
+                ]
+            }
+        ];
+
+        // 3. Ищем нужную заявку (если ID нет, показываем первую)
+        const request = allRequests.find(r => r.id == requestId) || allRequests[0];
+
+        // 4. Заполняем заголовок и бейдж статуса
+        document.getElementById('detail-title').textContent = `Заявка на ${request.type.toLowerCase()}`;
+        
+        const statusBadge = document.getElementById('detail-status-badge');
+        statusBadge.textContent = request.status;
+        statusBadge.classList.add(request.class); // Добавляем класс для цвета (approved, rejected, etc.)
+
+        document.getElementById('detail-subtitle').textContent = `Подана: ${request.date}`;
+
+        // 5. Заполняем данные
+        document.getElementById('detail-type').textContent = request.type === "Отпуск" ? "Ежегодный отпуск" : request.type;
+        document.getElementById('detail-period').textContent = request.period;
+        document.getElementById('detail-comment').textContent = request.comment || "—";
+
+        // 6. Генерируем историю статусов
+        const historyList = document.getElementById('status-history');
+        historyList.innerHTML = ''; // Очищаем
+
+        request.history.forEach(item => {
+            const li = document.createElement('li');
+            
+            // Определяем класс состояния
+            if (item.state === 'completed') li.classList.add('completed');
+            if (item.state === 'current') li.classList.add('current');
+
+            // Определяем бейдж времени
+            let badgeClass = 'time-badge';
+            if (item.state === 'empty') badgeClass = 'time-badge empty';
+
+            li.innerHTML = `
+                <span class="${item.state === 'current' ? 'status-action' : ''}">${item.name}</span>
+                <span class="${badgeClass}">${item.time}</span>
+            `;
+            
+            historyList.appendChild(li);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практика - Главная</title>
+    <style>
+        /* Базовые стили и сброс */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #111827;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Сайдбар --- */
+        .sidebar {
+            width: 240px;
+            background-color: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            color: #2563eb;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav a {
+            display: block;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #4b5563;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .nav a:hover {
+            background-color: #f3f4f6;
+        }
+
+        .nav a.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+
+        /* --- Основной контент --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 32px 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .welcome-text h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .welcome-text p {
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .user-info .name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .user-info .role {
+            color: #6b7280;
+        }
+
+        /* --- Карточки быстрых действий --- */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .action-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+            background-color: #fff;
+        }
+
+        .action-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .action-card.primary {
+            background-color: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .action-card.primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .action-card h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .action-card p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .action-card.primary p {
+            color: #dbeafe;
+        }
+
+        /* --- Блоки статистики и уведомлений --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .info-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .info-card h3 {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .days-left {
+            font-size: 36px;
+            color: #2563eb;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .info-card .hint {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .notifications {
+            list-style: none;
+            padding: 0;
+        }
+
+        .notifications li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .notifications li::before {
+            content: "•";
+            color: #2563eb;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        /* --- Таблица заявок --- */
+        .requests-table {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .table-header a {
+            color: #2563eb;
+            font-size: 14px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 13px;
+            color: #9ca3af;
+            font-weight: 500;
+            padding-bottom: 12px;
+        }
+
+        td {
+            padding: 16px 0;
+            font-size: 15px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        td:first-child {
+            font-weight: 600;
+            color: #111827;
+            width: 35%;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status.pending {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+
+        .status.approved {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+
+        .status.ready {
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Сайдбар -->
+    <aside class="sidebar">
+        <div class="logo">Практика</div>
+        <nav class="nav">
+            <a href="dashboard.html" class="active">Главная</a>
+            <a href="my-requests.html">Мои заявки</a>
+            <a href="documents.html">Документы</a>
+            <a href="profile.html">Профиль</a>
+            <a href="hr.html">HR</a> <!-- Если есть такая страница -->
+    <a href="admin.html">Админ</a> <!-- ДОБАВИТЬ ЭТУ СТРОКУ -->
+        </nav>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        
+        <div class="header">
+            <div class="welcome-text">
+                <h1>Главная</h1>
+                <h2>Добро пожаловать, <span id="user-name">Иван</span>!</h2>
+                <p>Быстрый доступ к заявкам и документам</p>
+            </div>
+            <div class="user-info">
+                <div class="notif-badge">Уведомления: <b>2</b></div>
+                <div>
+                    <div class="name" id="full-name">Иванов И.И.</div>
+                    <div class="role" id="user-role">Менеджер · Отдел продаж</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточки действий -->
+        <div class="quick-actions">
+            <div class="action-card primary">
+                <h3>Подать заявку</h3>
+                <p>Отпуск или больничный</p>
+            </div>
+            <div class="action-card">
+                <h3>Заказать справку</h3>
+                <p>2-НДФЛ, с места работы</p>
+            </div>
+            <div class="action-card">
+                <h3>Подписать документ</h3>
+                <p><span id="docs-count">1</span> документ ожидает</p>
+            </div>
+        </div>
+
+        <!-- Инфо-блоки -->
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Остаток отпуска</h3>
+                <div class="days-left"><span id="vacation-days">14</span> дней</div>
+                <div class="hint">Ежегодный оплачиваемый</div>
+            </div>
+            <div class="info-card">
+                <h3>Уведомления</h3>
+                <ul class="notifications">
+                    <li>Заявка на отпуск одобрена</li>
+                    <li>Новый документ на подпись</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Таблица заявок -->
+        <div class="requests-table">
+            <div class="table-header">
+                <h3>Последние заявки</h3>
+                <a href="#">Все заявки</a>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Период</th>
+                        <th>Дата подачи</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-body">
+                    <!-- Сюда JS подставит данные из "затычки" -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // ВРЕМЕННАЯ ЗАТЫЧКА (TODO: Заменить на реальные API запросы к бэкенду)
+        // ==========================================
+        
+        // Данные пользователя (придут из БД после логина)
+        const userData = {
+            firstName: "Иван",
+            fullName: "Иванов И.И.",
+            role: "Менеджер · Отдел продаж",
+            vacationDays: 14,
+            docsCount: 1
+        };
+
+        // Данные о последних заявках (придут из БД)
+        const requestsData = [
+            { type: "Отпуск", period: "10.03 — 24.03.2026", date: "05.03.2026", status: "На рассмотрении", class: "pending" },
+            { type: "Больничный", period: "01.02 — 05.02.2026", date: "01.02.2026", status: "Одобрено", class: "approved" },
+            { type: "Справка 2-НДФЛ", period: "—", date: "20.01.2026", status: "Готово", class: "ready" }
+        ];
+
+        // Функция для отрисовки данных на странице
+        function renderDashboard() {
+            // Подставляем данные пользователя
+            document.getElementById('user-name').textContent = userData.firstName;
+            document.getElementById('full-name').textContent = userData.fullName;
+            document.getElementById('user-role').textContent = userData.role;
+            document.getElementById('vacation-days').textContent = userData.vacationDays;
+            document.getElementById('docs-count').textContent = userData.docsCount;
+
+            // Отрисовываем таблицу заявок
+            const tbody = document.getElementById('requests-body');
+            tbody.innerHTML = ''; // Очищаем перед отрисовкой
+
+            requestsData.forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${req.type}</td>
+                    <td>${req.period}</td>
+                    <td>${req.date}</td>
+                    <td><span class="status ${req.class}">${req.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Запускаем отрисовку при загрузке страницы
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+    </script>
+</body>
+</html>
