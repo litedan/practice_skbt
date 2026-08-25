@@ -28,7 +28,22 @@ practice_skbt/
 
 ## Быстрый старт (Docker — рекомендуется)
 
+<<<<<<< HEAD
 Поднимает обе БД и backend одной командой. Миграции применяются автоматически при старте контейнера.
+=======
+| Контур | Назначение | Docker-сервис | Порт на хосте |
+|--------|------------|---------------|---------------|
+| **MainBD** | пользователи, заявки, уведомления | `hr_postgres` | **5434** (не 5432) |
+| **LogBD** | audit / auth / sensitive / system logs | `hr_logs_postgres` | **5433** |
+
+> На Windows часто занят порт **5432** локальным PostgreSQL. В `docker-compose` для MainBD используй проброс `"5434:5432"`.
+
+Схема MainBD — канонический DDL в схеме `app` (departments, positions, users, requests, …).
+
+## Быстрый старт
+
+### 1. Docker
+>>>>>>> 729f90b9e103713cdabe3dc1b5f970b0e1a6d510
 
 ```bash
 docker compose up -d --build
@@ -143,4 +158,16 @@ python scripts/smoke_api.py
 
 ## Секреты
 
+<<<<<<< HEAD
 Не коммить `backend/.env`. Для production смени `JWT_SECRET_KEY` в `docker-compose.yml` или через override-файл.
+=======
+3. **`relation "auth_log" does not exist`**  
+   Не применены миграции LogBD:
+   ```bash
+   alembic -c alembic_log.ini -x db=log upgrade head
+   ```
+
+4. **`malformed bcrypt hash`**  
+   Не используй `passlib` с bcrypt 5.x — в проекте прямой вызов `bcrypt`.
+
+>>>>>>> 729f90b9e103713cdabe3dc1b5f970b0e1a6d510
