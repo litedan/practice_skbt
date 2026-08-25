@@ -1,116 +1,106 @@
-# Кадровый электронный документооборот
+# KEDO — Кадровый электронный документооборот
 
+Backend API (FastAPI) для личного кабинета сотрудника, HR и руководителя.
 
 ## Стек
 
 - Python 3.11+
 - FastAPI + Pydantic v2
 - SQLAlchemy 2.0 (async) + asyncpg
-- Alembic (две БД: MainBD + LogBD)
+- Alembic (MainBD + LogBD)
 - PostgreSQL 17 (Docker)
-- JWT (access + refresh), bcrypt
+- JWT + bcrypt
 
 ## Структура
 
 ```
 practice_skbt/
+├── docker-compose.yml       # postgres + postgres_logs + backend
 ├── backend/
+│   ├── Dockerfile
+│   ├── docker-entrypoint.sh # миграции + запуск API
 │   ├── app/
-│   │   ├── api/v1/          # эндпоинты
-│   │   ├── core/            # config, DB, RBAC, security
-│   │   ├── models/          # MainBD + LogBD
-│   │   ├── schemas/
-│   │   └── services/
-│   ├── alembic/             # миграции main/ и log/
-│   ├── scripts/smoke_api.py # smoke-тест по ролям
-│   ├── .env.example
+│   ├── alembic/
 │   └── requirements.txt
-├── frontend/                
+├── frontend/
 └── docs/openapi.yaml
 ```
 
-## Базы данных
+## Быстрый старт (Docker — рекомендуется)
 
-| Контур | Назначение | Docker-сервис | Порт на хосте |
-|--------|------------|---------------|---------------|
-| **MainBD** | пользователи, заявки, уведомления | `hr_postgres` | **5434** (не 5432) |
-| **LogBD** | audit / auth / sensitive / system logs | `hr_logs_postgres` | **5433** |
-
-<<<<<<< HEAD
-> На Windows часто занят порт **5432** локальным PostgreSQL. В `docker-compose` для MainBD используй проброс `"5434:5432"`.
-
-Схема MainBD — канонический DDL в схеме `app` (departments, positions, users, requests, …).
-
-## Быстрый старт
-
-### 1. Docker
+Поднимает обе БД и backend одной командой. Миграции применяются автоматически при старте контейнера.
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-Убедись, что Postgres healthy, MainBD доступен на `localhost:5434`, LogBD — на `localhost:5433`.
+| Сервис | URL / порт |
+|--------|------------|
+| API | http://127.0.0.1:8000 |
+| Swagger | http://127.0.0.1:8000/docs |
+| Health | http://127.0.0.1:8000/health |
+| MainBD (с хоста) | `localhost:5434` |
+| LogBD (с хоста) | `localhost:5433` |
 
-### 2. Backend env
+Логи backend:
+
+```bash
+docker compose logs -f backend
+```
+
+Остановка:
+
+```bash
+docker compose down
+```
+
+> MainBD проброшен на **5434**, чтобы не конфликтовать с локальным PostgreSQL на Windows (5432).
+
+## Локальный запуск (без Docker для API)
+
+### 1. Только БД в Docker
+
+```bash
+docker compose up -d postgres postgres_logs
+```
+
+### 2. Env
 
 ```bash
 cd backend
-copy .env.example .env   # Windows
-# или: cp .env.example .env
+copy .env.example .env
 ```
 
-В `.env` должны быть учётные данные Docker:
+Для локального uvicorn:
 
 ```
 MAIN_DB_HOST=localhost
 MAIN_DB_PORT=5434
-MAIN_DB_USER=hr_user
-MAIN_DB_PASSWORD=hr_password
-MAIN_DB_NAME=hr_db
-
 LOG_DB_HOST=localhost
 LOG_DB_PORT=5433
-LOG_DB_USER=logs_user
-LOG_DB_PASSWORD=logs_password
-LOG_DB_NAME=logs_db
 ```
 
-### 3. Зависимости
+### 3. Зависимости и миграции
 
-=======
-## Запуск backend
-
->>>>>>> a15a5eb167c1b79caf80ce0b0af525602a09ae57
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate          # Windows
+.venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### 4. Миграции
-
-```bash
-# MainBD
 alembic -x db=main upgrade head
-
-# LogBD (отдельный ini — иначе миграции log не находятся)
 alembic -c alembic_log.ini -x db=log upgrade head
 ```
 
-### 5. Запуск API
+### 4. Запуск
 
 ```bash
-cd backend
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- Swagger: http://127.0.0.1:8000/docs  
-- Health: http://127.0.0.1:8000/health  
-
 ## Dev-пользователи
 
-Пароль у всех: **`Password123!`**
+Пароль у всех: **`Password123!`** (один `!` в конце, не `!!`)
 
 | Email | Роль |
 |-------|------|
@@ -119,9 +109,6 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 | `hr@kedo.local` | HR |
 | `admin@kedo.local` | Администратор |
 
-<<<<<<< HEAD
-Логин:
-
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -129,9 +116,7 @@ Content-Type: application/json
 {"email": "hr@kedo.local", "password": "Password123!"}
 ```
 
-Домен `.local` поддерживается (стандартный `EmailStr` его отклоняет — в проекте своя валидация).
-
-## Роли и права (кратко)
+## Роли и права
 
 | | Работник | Руководитель | HR | Админ |
 |--|:--------:|:------------:|:--:|:-----:|
@@ -139,66 +124,23 @@ Content-Type: application/json
 | Заявки отдела | — | ✅ | ✅ (все) | — |
 | Проверка заявок | — | — | ✅ | — |
 | Согласование | — | ✅ | — | — |
-| ПДн сотрудников | свои | свои | любые | — |
-| Admin users / audit | — | — | список users | ✅ + audit + block |
-
-Роль берётся из `positions.name`: Работник / HR / Руководитель / Администратор.
-
-## Основные эндпоинты
-
-| Метод | Путь | Кто |
-|-------|------|-----|
-| POST | `/api/v1/auth/login` | все |
-| POST | `/api/v1/auth/refresh` | все |
-| POST | `/api/v1/auth/logout` | auth |
-| GET/PATCH | `/api/v1/users/me` | auth |
-| POST | `/api/v1/users/me/change-password` | auth |
-| GET | `/api/v1/users/{id}` | self / HR / manager (отдел) |
-| GET/PUT | `/api/v1/users/{id}/private-data` | self / HR |
-| GET/POST/PATCH | `/api/v1/requests` | по RBAC |
-| GET | `/api/v1/requests/stats` | HR / manager |
-| GET/POST | `/api/v1/requests/{id}/files` | автор / читатели заявки |
-| GET | `/api/v1/notifications` | auth |
-| GET | `/api/v1/dictionaries/*` | auth |
-| GET | `/api/v1/admin/users` | HR / admin |
-| PATCH | `/api/v1/admin/users/{id}` | admin |
-| GET | `/api/v1/admin/audit` | admin |
-
-Жизненный цикл заявки:
-
-`Создана` → `На проверке` (HR) → `На согласовании` (HR) → `Одобрена` (руководитель) / `Отклонена` → `Закрыта` (HR).
+| ПДн | свои | свои | любые | — |
+| Admin / audit | — | — | users list | ✅ |
 
 ## Smoke-тест
 
-При запущенном API:
-
 ```bash
 cd backend
-pip install httpx   # если ещё нет
+pip install httpx
 python scripts/smoke_api.py
 ```
 
-Проверяет login всех ролей, создание заявки, переходы HR/manager, stats, admin audit и т.д.
-
 ## Типичные проблемы
 
-1. **`ConnectionResetError` / WinError 10054 на 5432**  
-   Конфликт с Windows PostgreSQL. Используй порт **5434** для MainBD.
+1. **WinError 10054 на 5432** — конфликт с Windows PostgreSQL, используй порт 5434 для MainBD.
+2. **`auth_log` does not exist** — не применены миграции LogBD (`alembic -c alembic_log.ini -x db=log upgrade head`).
+3. **Backend не стартует в Docker** — `docker compose logs backend`, дождись `healthy` у postgres.
 
-2. **`422` на login с `@kedo.local`**  
-   Нужна актуальная версия кода со своей email-валидацией (не `EmailStr`).
+## Секреты
 
-3. **`relation "auth_log" does not exist`**  
-   Не применены миграции LogBD:
-   ```bash
-   alembic -c alembic_log.ini -x db=log upgrade head
-   ```
-
-4. **`malformed bcrypt hash`**  
-   Не используй `passlib` с bcrypt 5.x — в проекте прямой вызов `bcrypt`.
-
-## Коммит / PR
-
-Перед коммитом не добавляй `.env` (секреты). В репозитории должен быть только `.env.example`.
-=======
->>>>>>> a15a5eb167c1b79caf80ce0b0af525602a09ae57
+Не коммить `backend/.env`. Для production смени `JWT_SECRET_KEY` в `docker-compose.yml` или через override-файл.

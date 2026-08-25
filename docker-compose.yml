@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: hr_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hr_db
+      POSTGRES_USER: hr_user
+      POSTGRES_PASSWORD: hr_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hr_user -d hr_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres_logs:
+    image: postgres:17
+    container_name: hr_logs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: logs_db
+      POSTGRES_USER: logs_user
+      POSTGRES_PASSWORD: logs_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - logs_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logs_user -d logs_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kedo_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres_logs:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: KEDO
+      APP_ENV: development
+      DEBUG: "true"
+      API_V1_PREFIX: /api/v1
+      CORS_ORIGINS: http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+      MAIN_DB_HOST: hr_postgres
+      MAIN_DB_PORT: 5432
+      MAIN_DB_USER: hr_user
+      MAIN_DB_PASSWORD: hr_password
+      MAIN_DB_NAME: hr_db
+      LOG_DB_HOST: hr_logs_postgres
+      LOG_DB_PORT: 5432
+      LOG_DB_USER: logs_user
+      LOG_DB_PASSWORD: logs_password
+      LOG_DB_NAME: logs_db
+      JWT_SECRET_KEY: change-me-to-a-long-random-secret-key
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    networks:
+      - default
+      - bd_practice_default
+
+networks:
+  bd_practice_default:
+    external: true
+
+volumes:
+  postgres_data:
+  logs_postgres_data:
+  backend_uploads:
