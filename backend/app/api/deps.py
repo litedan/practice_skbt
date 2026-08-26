@@ -24,7 +24,9 @@ from app.services.notification_service import NotificationService
 from app.services.request_service import RequestService
 from app.services.user_private_data_service import UserPrivateDataService
 from app.services.user_service import UserService
-
+from app.services.request_document_generator import (
+    RequestDocumentGenerator,
+)
 # --- Security scheme ---
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -116,7 +118,16 @@ def get_request_service(
 
 
 RequestServiceDep = Annotated[RequestService, Depends(get_request_service)]
+def get_request_document_generator(
+    main_db: MainDB,
+) -> RequestDocumentGenerator:
+    return RequestDocumentGenerator(main_db)
 
+
+RequestDocumentGeneratorDep = Annotated[
+    RequestDocumentGenerator,
+    Depends(get_request_document_generator),
+]
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],

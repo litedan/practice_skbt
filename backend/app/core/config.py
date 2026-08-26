@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     # --- Файлы ---
     upload_dir: str = "./uploads"
 
+    # --- Генерация документов ---
+    document_templates_dir: str = "./app/templates" # путь к шаблонам
+    generated_documents_dir: str = "./generated_docs" # путь к сгенеренным файлам
+    organization_name: str = 'ООО "Компания"'  
+    director_name: str = "Иванов И.И." 
+    director_position: str = "Генеральный директор"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cors_origins_list(self) -> list[str]:

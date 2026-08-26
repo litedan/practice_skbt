@@ -1,13 +1,16 @@
 """
 Кадровые заявки: CRUD, файлы, HR-статистика.
 """
-
+from app.schemas.document_generation import (
+    GenerateRequestDocumentPayload,
+    GeneratedRequestDocumentResponse,
+)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import FileResponse
 
-from app.api.deps import ClientInfoDep, CurrentUser, RequestServiceDep, require_permission
+from app.api.deps import ClientInfoDep, CurrentUser, RequestDocumentGeneratorDep, RequestServiceDep, require_permission
 from app.core.permissions import Permission
 from app.models.main.user import User
 from app.schemas.request import (
@@ -78,6 +81,33 @@ async def create_request(
         payload=payload,
         ip_address=client.ip_address,
         user_agent=client.user_agent,
+    )
+    
+@router.post(
+    "/{request_id}/generate-document",
+    response_model=GeneratedRequestDocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_document_for_request(
+    request_id: int,
+    payload: GenerateRequestDocumentPayload,
+    current_user: CurrentUser,
+    generator: RequestDocumentGeneratorDep,
+) -> GeneratedRequestDocumentResponse:
+    """Генерирует документ для существующей заявки."""
+
+    document_file = await generator.generate(
+        employee_id=current_user.id,
+        template_code=payload.template_code,
+        context=payload.context,
+        request_id=request_id,
+    )
+
+    return GeneratedRequestDocumentResponse(
+        id=document_file.id,
+        name=document_file.name,
+        request_id=document_file.request_id,
+        file_path=document_file.file_path,
     )
 
 

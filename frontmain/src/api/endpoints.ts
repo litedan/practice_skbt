@@ -13,6 +13,18 @@ import type {
   UserRead,
 } from '../types/api'
 
+export type GenerateRequestDocumentPayload = {
+  template_code: string
+  context: Record<string, unknown>
+}
+
+export type GeneratedRequestDocument = {
+  id: number
+  name: string
+  request_id: number
+  file_path: string
+}
+
 export async function login(email: string, password: string) {
   const tokens = await api.post<{ access_token: string; refresh_token: string }>(
     '/auth/login',
@@ -79,6 +91,15 @@ export const documentsApi = {
     api.post<{ document_id: number; status: string; message: string; signed_at: string | null }>(
       `/documents/${documentId}/sign`,
     ),
+        generateDocument: (
+    id: number,
+    body: GenerateRequestDocumentPayload,
+  ) =>
+    api.post<GeneratedRequestDocument>(
+      `/requests/${id}/generate-document`,
+      body,
+    ),
+
 }
 
 export const notificationsApi = {
