@@ -1,39 +1,4 @@
 services:
-  postgres:
-    image: postgres:17
-    container_name: hr_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: hr_db
-      POSTGRES_USER: hr_user
-      POSTGRES_PASSWORD: hr_password
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hr_user -d hr_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  postgres_logs:
-    image: postgres:17
-    container_name: hr_logs_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: logs_db
-      POSTGRES_USER: logs_user
-      POSTGRES_PASSWORD: logs_password
-    ports:
-      - "5433:5432"
-    volumes:
-      - logs_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U logs_user -d logs_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   backend:
     build:
