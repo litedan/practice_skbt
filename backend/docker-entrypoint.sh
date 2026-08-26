@@ -1,10 +1,13 @@
 #!/bin/sh
 set -e
 
+# =============================================
+# 1. Ожидание доступности TCP-портов (MainDB + LogDB)
+# =============================================
 wait_for_tcp() {
   host="$1"
   port="$2"
-  echo "Waiting for ${host}:${port}..."
+  echo "⏳ Waiting for ${host}:${port}..."
   until python - <<PY
 import socket
 import sys
@@ -20,13 +23,16 @@ PY
   do
     sleep 1
   done
-  echo "${host}:${port} is ready"
+  echo "✅ ${host}:${port} is ready"
 }
 
-wait_for_tcp "${MAIN_DB_HOST:-hr_postgres}" "${MAIN_DB_PORT:-5432}"
-wait_for_tcp "${LOG_DB_HOST:-hr_logs_postgres}" "${LOG_DB_PORT:-5432}"
+wait_for_tcp "${MAIN_DB_HOST:-postgres}" "${MAIN_DB_PORT:-5432}"
+wait_for_tcp "${LOG_DB_HOST:-postgres_logs}" "${LOG_DB_PORT:-5432}"
 
-echo "Applying MainBD migrations..."
+# =============================================
+# 2. Проверка существования схемы Alembic
+# =============================================
+echo "🔧 Preparing MainBD migrations..."
 python - <<'PY'
 import asyncio
 import os
@@ -40,7 +46,7 @@ async def prepare() -> None:
         user=os.environ["MAIN_DB_USER"],
         password=os.environ["MAIN_DB_PASSWORD"],
         database=os.environ["MAIN_DB_NAME"],
-        host=os.environ.get("MAIN_DB_HOST", "hr_postgres"),
+        host=os.environ.get("MAIN_DB_HOST", "postgres"),
         port=int(os.environ.get("MAIN_DB_PORT", "5432")),
     )
     try:
@@ -58,7 +64,7 @@ async def prepare() -> None:
         )
         if has_users and not has_version:
             print(
-                "Existing MainBD schema without Alembic history; stamping 001_main_schema"
+                "ℹ️ Existing MainBD schema without Alembic history; stamping 001_main_schema"
             )
             subprocess.check_call(
                 ["alembic", "-x", "db=main", "stamp", "001_main_schema"]
@@ -69,13 +75,24 @@ async def prepare() -> None:
 
 asyncio.run(prepare())
 PY
+
+# =============================================
+# 3. Запуск миграций Alembic
+# =============================================
+echo "📦 Applying MainBD migrations..."
 alembic -x db=main upgrade head
 
-echo "Applying LogBD migrations..."
+echo "📦 Applying LogBD migrations..."
 alembic -c alembic_log.ini -x db=log upgrade head
 
-echo "Ensuring dev users (@kedo.local)..."
+# =============================================
+# 4. Создание dev-пользователей
+# =============================================
+echo "👤 Ensuring dev users (@kedo.local)..."
 python scripts/ensure_dev_users.py
 
-echo "Starting API..."
+# =============================================
+# 5. Запуск приложения
+# =============================================
+echo "🚀 Starting API..."
 exec "$@"
