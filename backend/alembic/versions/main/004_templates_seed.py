@@ -3,6 +3,7 @@
 from typing import Sequence, Union
 
 from alembic import op
+import sqlalchemy as sa
 
 revision: str = "004_templates_seed"
 down_revision: Union[str, None] = "003_align_canonical_ddl"
@@ -12,25 +13,31 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("SET search_path = app, public")
-    op.execute(
-        """
-        CREATE TABLE templates (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            code TEXT NOT NULL UNIQUE,
-            file_path TEXT NOT NULL,
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    
+    if not inspector.has_table('templates', schema='app'):
+        op.execute(
+            """
+            CREATE TABLE templates (
+                id BIGSERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                code TEXT NOT NULL UNIQUE,
+                file_path TEXT NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """
         )
-        """
-    )
-    op.execute("CREATE INDEX idx_templates_code ON templates(code)")
+        op.execute("CREATE INDEX idx_templates_code ON templates(code)")
+    
     op.execute(
         """
         INSERT INTO templates (name, code, file_path, is_active) VALUES
         ('Заявление на отпуск', 'vacation_application', 'zayavlenie_na_otpusk.docx', TRUE),
-        ('Заявление на больничный', 'sick_leave_application', 'zayavlenie_na_bolnichiy.docx', TRUE)
+        ('Заявление на увольнение', 'resignation_application', 'zayavlenie_na_uvolnenie.docx', TRUE)
         ON CONFLICT (code) DO NOTHING
         """
     )
