@@ -9,6 +9,20 @@ export type RequestTypeItem = DictionaryItem & {
   file_path: string | null
 }
 
+export type TemplateFieldItem = {
+  key: string
+  label: string
+  type: 'text' | 'date' | 'number' | 'textarea'
+  required: boolean
+}
+
+export type TemplateItem = {
+  id: number
+  name: string
+  code: string
+  fields: TemplateFieldItem[]
+}
+
 export type UserRead = {
   id: number
   email: string | null

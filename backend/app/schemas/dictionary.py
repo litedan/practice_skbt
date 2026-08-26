@@ -10,3 +10,17 @@ class DictionaryItem(ORMModel):
 
 class RequestTypeItem(DictionaryItem):
     file_path: str | None = None
+
+
+class TemplateFieldItem(ORMModel):
+    key: str
+    label: str
+    type: str = "text"
+    required: bool = True
+
+
+class TemplateItem(ORMModel):
+    id: int
+    name: str
+    code: str
+    fields: list[TemplateFieldItem] = []

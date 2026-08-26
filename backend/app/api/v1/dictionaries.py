@@ -4,11 +4,13 @@ from fastapi import APIRouter
 from sqlalchemy import select
 
 from app.api.deps import CurrentUser, MainDB
+from app.core.template_fields import get_template_fields
 from app.models.main.department import Department
 from app.models.main.position import Position
 from app.models.main.request_type import RequestType
 from app.models.main.status import Status
-from app.schemas.dictionary import DictionaryItem, RequestTypeItem
+from app.models.main.template import Template
+from app.schemas.dictionary import DictionaryItem, RequestTypeItem, TemplateItem
 
 router = APIRouter(prefix="/dictionaries", tags=["Dictionaries"])
 
@@ -35,3 +37,20 @@ async def get_request_types(_: CurrentUser, db: MainDB) -> list[RequestTypeItem]
 async def get_statuses(_: CurrentUser, db: MainDB) -> list[DictionaryItem]:
     result = await db.execute(select(Status).order_by(Status.name))
     return [DictionaryItem.model_validate(item) for item in result.scalars()]
+
+
+@router.get("/templates", response_model=list[TemplateItem])
+async def get_templates(_: CurrentUser, db: MainDB) -> list[TemplateItem]:
+    """Активные шаблоны документов, доступные при создании заявки."""
+    result = await db.execute(
+        select(Template).where(Template.is_active.is_(True)).order_by(Template.name)
+    )
+    return [
+        TemplateItem(
+            id=item.id,
+            name=item.name,
+            code=item.code,
+            fields=[field.__dict__ for field in get_template_fields(item.code)],
+        )
+        for item in result.scalars()
+    ]

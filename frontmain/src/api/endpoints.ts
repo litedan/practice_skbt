@@ -8,6 +8,7 @@ import type {
   RequestRead,
   RequestStats,
   RequestTypeItem,
+  TemplateItem,
   UserMe,
   UserPrivateData,
   UserRead,
@@ -60,6 +61,7 @@ export const dictionariesApi = {
   positions: () => api.get<DictionaryItem[]>('/dictionaries/positions'),
   requestTypes: () => api.get<RequestTypeItem[]>('/dictionaries/request-types'),
   statuses: () => api.get<DictionaryItem[]>('/dictionaries/statuses'),
+  templates: () => api.get<TemplateItem[]>('/dictionaries/templates'),
 }
 
 export const requestsApi = {
