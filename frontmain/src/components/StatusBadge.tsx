@@ -10,7 +10,7 @@ export function StatusBadge({ status }: Props) {
     lower.includes('проверк') ||
     lower.includes('соглас') ||
     lower.includes('создан') ||
-    lower.includes('подпис') ||
+    lower.includes('на подпись') ||
     lower.includes('приказ')
   ) {
     cls = 'badge badge-warn'
@@ -19,10 +19,11 @@ export function StatusBadge({ status }: Props) {
     lower.includes('закрыт') ||
     lower.includes('готов') ||
     lower.includes('активен') ||
-    lower.includes('подписан')
+    lower.includes('подписан') ||
+    lower.includes('действует')
   ) {
     cls = 'badge badge-ok'
-  } else if (lower.includes('отклон') || lower.includes('блок')) {
+  } else if (lower.includes('отклон') || lower.includes('блок') || lower.includes('отозван')) {
     cls = 'badge badge-bad'
   }
 

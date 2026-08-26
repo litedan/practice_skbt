@@ -30,9 +30,9 @@ export function HomePage() {
           canNotify ? notificationsApi.list() : Promise.resolve([]),
           canRequests ? requestsApi.list() : Promise.resolve([]),
         ])
-        if (cancelled) return
+        if (cancelled || !user) return
         setNotifications(notes)
-        setRequests(list)
+        setRequests(list.filter((item) => item.employee_id === user.id))
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Ошибка загрузки')
       }
@@ -41,7 +41,7 @@ export function HomePage() {
     return () => {
       cancelled = true
     }
-  }, [canNotify, canRequests])
+  }, [canNotify, canRequests, user])
 
   const unread = notifications.filter((item) => !item.is_read)
 
@@ -146,7 +146,7 @@ export function HomePage() {
                 Последние заявки
               </h3>
               <Link to="/requests" className="link">
-                Все заявки
+                Мои заявки
               </Link>
             </div>
             {requests.length === 0 && <p className="empty">Заявок нет</p>}

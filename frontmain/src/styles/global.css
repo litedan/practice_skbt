@@ -187,6 +187,35 @@ textarea {
   color: var(--primary);
 }
 
+.badge-pdf {
+  background: #fde8e8;
+  color: #b42318;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.doc-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid #f1f3f6;
+}
+
+.doc-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+@media (max-width: 720px) {
+  .doc-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

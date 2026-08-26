@@ -74,6 +74,13 @@ export const requestsApi = {
   download: (requestId: number, fileId: number) => apiDownload(`/requests/${requestId}/files/${fileId}`),
 }
 
+export const documentsApi = {
+  sign: (documentId: number) =>
+    api.post<{ document_id: number; status: string; message: string; signed_at: string | null }>(
+      `/documents/${documentId}/sign`,
+    ),
+}
+
 export const notificationsApi = {
   list: () => api.get<NotificationItem[]>('/notifications'),
   markRead: (id: number) => api.patch<{ detail: string }>(`/notifications/${id}/read`),

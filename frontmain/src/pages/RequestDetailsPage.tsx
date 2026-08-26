@@ -1,11 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { dictionariesApi, requestsApi } from '../api/endpoints'
+import { requestsApi } from '../api/endpoints'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
 import { errorMessage, formatDate, formatDateTime } from '../lib/format'
-import { actionsForRequest, statusIdByName } from '../lib/requestActions'
-import { REQUEST_STATUS, type DictionaryItem, type RequestDetail } from '../types/api'
+import { REQUEST_STATUS, type RequestDetail } from '../types/api'
 
 async function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -21,18 +20,13 @@ export function RequestDetailsPage() {
   const { user, role } = useAuth()
   const requestId = Number(id)
   const [item, setItem] = useState<RequestDetail | null>(null)
-  const [statuses, setStatuses] = useState<DictionaryItem[]>([])
   const [comment, setComment] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
 
   async function load() {
-    const [detail, statusList] = await Promise.all([
-      requestsApi.get(requestId),
-      dictionariesApi.statuses(),
-    ])
+    const detail = await requestsApi.get(requestId)
     setItem(detail)
-    setStatuses(statusList)
     setComment(detail.comment ?? '')
   }
 
@@ -46,41 +40,21 @@ export function RequestDetailsPage() {
   if (error && !item) return <p className="form-error">{error}</p>
   if (!item) return <p className="empty">Загрузка…</p>
 
-  const request = item
-  const isOwner = user?.id === request.employee_id
-  const canEditComment = isOwner && request.status.name === REQUEST_STATUS.CREATED
+  const isOwner = user?.id === item.employee_id
+  const workArea = role === 'hr' || role === 'manager'
+  const backTo = workArea && !isOwner ? '/hr' : '/requests'
+  const backLabel = backTo === '/hr' ? '← Назад к очереди' : '← Назад к заявкам'
+  const canEditComment = isOwner && item.status.name === REQUEST_STATUS.CREATED
   const canUpload =
     isOwner &&
-    (request.status.name === REQUEST_STATUS.CREATED || request.status.name === REQUEST_STATUS.IN_REVIEW)
-  const actions = actionsForRequest(request, role)
+    (item.status.name === REQUEST_STATUS.CREATED || item.status.name === REQUEST_STATUS.IN_REVIEW)
 
   async function saveComment(e: FormEvent) {
     e.preventDefault()
     setPending(true)
     setError('')
     try {
-      await requestsApi.update(request.id, { comment })
-      await load()
-    } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setPending(false)
-    }
-  }
-
-  async function runAction(statusName: string) {
-    const statusId = statusIdByName(statuses, statusName)
-    if (!statusId) {
-      setError(`Статус «${statusName}» не найден в справочнике`)
-      return
-    }
-    setPending(true)
-    setError('')
-    try {
-      await requestsApi.update(request.id, {
-        status_id: statusId,
-        comment: comment.trim() || undefined,
-      })
+      await requestsApi.update(item!.id, { comment })
       await load()
     } catch (err) {
       setError(errorMessage(err))
@@ -93,7 +67,7 @@ export function RequestDetailsPage() {
     setPending(true)
     setError('')
     try {
-      await requestsApi.upload(request.id, file)
+      await requestsApi.upload(item!.id, file)
       await load()
     } catch (err) {
       setError(errorMessage(err))
@@ -103,14 +77,14 @@ export function RequestDetailsPage() {
   }
 
   async function onDownload(fileId: number, name: string) {
-    const blob = await requestsApi.download(request.id, fileId)
+    const blob = await requestsApi.download(item!.id, fileId)
     await saveBlob(blob, name)
   }
 
   return (
     <>
-      <Link to="/requests" className="back-link">
-        ← Назад к заявкам
+      <Link to={backTo} className="back-link">
+        {backLabel}
       </Link>
 
       <div className="page-header">
@@ -143,7 +117,7 @@ export function RequestDetailsPage() {
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                disabled={!canEditComment && actions.length === 0}
+                disabled={!canEditComment}
               />
             </div>
             {canEditComment && (
@@ -185,31 +159,6 @@ export function RequestDetailsPage() {
           )}
         </div>
       </div>
-
-      {actions.length > 0 && (
-        <div className="card">
-          <h3 className="section-title">Действия</h3>
-          <div className="actions">
-            {actions.map((action) => (
-              <button
-                key={action.statusName}
-                type="button"
-                className={
-                  action.kind === 'danger'
-                    ? 'btn btn-danger'
-                    : action.kind === 'secondary'
-                      ? 'btn btn-secondary'
-                      : 'btn btn-primary'
-                }
-                disabled={pending}
-                onClick={() => void runAction(action.statusName)}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   )
 }

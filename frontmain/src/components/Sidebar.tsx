@@ -15,12 +15,12 @@ const items: NavItem[] = [
   { to: '/', label: 'Главная' },
   {
     to: '/requests',
-    label: 'Заявки',
+    label: 'Мои заявки',
     permissions: ['requests:read_self', 'requests:read_any', 'requests:read_department'],
   },
   {
     to: '/documents',
-    label: 'Вложения',
+    label: 'Документы',
     permissions: ['requests:read_self', 'requests:read_any', 'requests:read_department'],
   },
   { to: '/profile', label: 'Профиль' },

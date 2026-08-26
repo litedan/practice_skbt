@@ -16,13 +16,9 @@ export function RequestsPage() {
   const [loading, setLoading] = useState(true)
 
   const canCreate = hasPermission(user, 'requests:create')
-  const title = hasPermission(user, 'requests:read_any')
-    ? 'Заявки'
-    : hasPermission(user, 'requests:read_department')
-      ? 'Заявки отдела'
-      : 'Мои заявки'
 
   useEffect(() => {
+    if (!user) return
     let cancelled = false
     async function load() {
       setLoading(true)
@@ -34,7 +30,7 @@ export function RequestsPage() {
         ])
         if (cancelled) return
         setStatuses(statusList)
-        setList(requests)
+        setList(requests.filter((item) => item.employee_id === user!.id))
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Ошибка загрузки')
       } finally {
@@ -45,14 +41,14 @@ export function RequestsPage() {
     return () => {
       cancelled = true
     }
-  }, [filterId])
+  }, [filterId, user])
 
   const filters = useMemo(() => [{ id: 'all' as const, name: 'Все' }, ...statuses], [statuses])
 
   return (
     <>
       <div className="page-header">
-        <h1 className="page-title">{title}</h1>
+        <h1 className="page-title">Мои заявки</h1>
         {canCreate && (
           <Link to="/requests/new" className="btn btn-primary">
             Новая заявка
@@ -82,7 +78,6 @@ export function RequestsPage() {
             <thead>
               <tr>
                 <th>Тип</th>
-                <th>Сотрудник</th>
                 <th>Дата</th>
                 <th>Статус</th>
               </tr>
@@ -95,7 +90,6 @@ export function RequestsPage() {
                       {item.request_type.name} #{item.id}
                     </Link>
                   </td>
-                  <td>{item.employee?.full_name ?? '—'}</td>
                   <td>{formatDate(item.created_at)}</td>
                   <td>
                     <StatusBadge status={item.status.name} />

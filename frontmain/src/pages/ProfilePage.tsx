@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { usersApi } from '../api/endpoints'
+import { StatusBadge } from '../components/StatusBadge'
 import { errorMessage, formatDate, roleLabel } from '../lib/format'
 import { hasPermission } from '../lib/permissions'
 import type { UserPrivateData } from '../types/api'
@@ -182,6 +183,8 @@ export function ProfilePage() {
               </div>
             </div>
 
+            <ConsentBlock userId={user.id} />
+
             <div className="card">
               <h3 className="section-title">Банковские реквизиты</h3>
               <div className="grid-2">
@@ -214,6 +217,8 @@ export function ProfilePage() {
             </div>
           </>
         )}
+
+        {!canPrivate && <ConsentBlock userId={user.id} />}
 
         <div className="actions" style={{ marginTop: 8 }}>
           <button className="btn btn-primary" type="submit" disabled={pending}>
@@ -272,6 +277,78 @@ function Field({
     <div className="field">
       <label>{label}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  )
+}
+
+type ConsentState = {
+  status: 'Действует' | 'Не подписано' | 'Отозван'
+  signedAt: string | null
+}
+
+function consentKey(userId: number) {
+  return `kedo_consent_${userId}`
+}
+
+function loadConsent(userId: number): ConsentState {
+  try {
+    const raw = localStorage.getItem(consentKey(userId))
+    if (!raw) return { status: 'Не подписано', signedAt: null }
+    return JSON.parse(raw) as ConsentState
+  } catch {
+    return { status: 'Не подписано', signedAt: null }
+  }
+}
+
+function ConsentBlock({ userId }: { userId: number }) {
+  const [consent, setConsent] = useState<ConsentState>(() => loadConsent(userId))
+
+  useEffect(() => {
+    setConsent(loadConsent(userId))
+  }, [userId])
+
+  function persist(next: ConsentState) {
+    setConsent(next)
+    localStorage.setItem(consentKey(userId), JSON.stringify(next))
+  }
+
+  return (
+    <div className="card">
+      <h3 className="section-title">Согласие на обработку персональных данных</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Таблицы согласия в БД есть, API пока нет — статус сохраняется в этом браузере.
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontWeight: 500 }}>Цель: кадровый учёт и документооборот</div>
+          <div className="muted" style={{ marginTop: 4 }}>
+            {consent.signedAt ? `Подписано: ${formatDate(consent.signedAt)}` : 'Ещё не подписано'}
+          </div>
+        </div>
+        <StatusBadge status={consent.status} />
+      </div>
+      <div className="actions" style={{ marginTop: 16 }}>
+        {consent.status !== 'Действует' && (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() =>
+              persist({ status: 'Действует', signedAt: new Date().toISOString() })
+            }
+          >
+            Подписать согласие
+          </button>
+        )}
+        {consent.status === 'Действует' && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => persist({ status: 'Отозван', signedAt: consent.signedAt })}
+          >
+            Отозвать
+          </button>
+        )}
+      </div>
     </div>
   )
 }

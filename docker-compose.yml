@@ -75,11 +75,20 @@ services:
       - default
       - bd_practice_default
 
+  frontend:
+    build:
+      context: ./frontmain
+      dockerfile: Dockerfile
+    container_name: kedo_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
 networks:
   bd_practice_default:
     external: true
 
 volumes:
-  postgres_data:
-  logs_postgres_data:
   backend_uploads:
