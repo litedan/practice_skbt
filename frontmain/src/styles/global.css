@@ -415,6 +415,20 @@ textarea {
   color: var(--text);
 }
 
+.field input.invalid,
+.field select.invalid,
+.field textarea.invalid {
+  border-color: var(--bad-text);
+  background: #fff8f8;
+}
+
+.field-error {
+  color: var(--bad-text);
+  font-size: 12px;
+  margin: -4px 0 0;
+  line-height: 1.35;
+}
+
 .actions {
   display: flex;
   gap: 12px;
