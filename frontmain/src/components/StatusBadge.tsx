@@ -20,10 +20,16 @@ export function StatusBadge({ status }: Props) {
     lower.includes('готов') ||
     lower.includes('активен') ||
     lower.includes('подписан') ||
-    lower.includes('действует')
+    lower.includes('действует') ||
+    lower.includes('заполнен')
   ) {
     cls = 'badge badge-ok'
-  } else if (lower.includes('отклон') || lower.includes('блок') || lower.includes('отозван')) {
+  } else if (
+    lower.includes('отклон') ||
+    lower.includes('блок') ||
+    lower.includes('отозван') ||
+    lower.includes('нет данных')
+  ) {
     cls = 'badge badge-bad'
   }
 

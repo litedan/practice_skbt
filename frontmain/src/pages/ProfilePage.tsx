@@ -315,9 +315,6 @@ function ConsentBlock({ userId }: { userId: number }) {
   return (
     <div className="card">
       <h3 className="section-title">Согласие на обработку персональных данных</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
-        Таблицы согласия в БД есть, API пока нет — статус сохраняется в этом браузере.
-      </p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontWeight: 500 }}>Цель: кадровый учёт и документооборот</div>

@@ -1,85 +1,77 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { documentsApi, requestsApi } from '../api/endpoints'
+import { useEffect, useState } from 'react'
+import { usersApi } from '../api/endpoints'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../auth/AuthContext'
-import { errorMessage, formatDate } from '../lib/format'
-import { REQUEST_STATUS, type DocumentFile, type RequestDetail } from '../types/api'
+import { errorMessage } from '../lib/format'
+import { hasPermission } from '../lib/permissions'
+import type { UserPrivateData } from '../types/api'
 
-type DocFilter = 'all' | 'to_sign' | 'signed'
+type PersonalDocKind = 'passport' | 'snils' | 'military' | 'bank'
 
-type FormedDocument = {
-  id: number
+type PersonalDoc = {
+  kind: PersonalDocKind
   title: string
-  date: string
-  status: 'На подпись' | 'Подписан' | 'Готов'
-  requestId: number
-  file: DocumentFile | null
+  subtitle: string
+  previewLabel: string
+  filled: boolean
+  valuePreview: string
 }
 
-const SIGNED_KEY = 'kedo_signed_docs'
+function buildDocs(data: UserPrivateData | null): PersonalDoc[] {
+  const bankParts = [
+    data?.account_number,
+    data?.bik,
+    data?.bank_receiver,
+    data?.correspondent_account,
+    data?.kpp,
+  ].filter(Boolean)
 
-function loadSignedIds(): Set<number> {
-  try {
-    const raw = localStorage.getItem(SIGNED_KEY)
-    if (!raw) return new Set()
-    return new Set(JSON.parse(raw) as number[])
-  } catch {
-    return new Set()
-  }
-}
-
-function saveSignedIds(ids: Set<number>) {
-  localStorage.setItem(SIGNED_KEY, JSON.stringify([...ids]))
-}
-
-function mapDocument(req: RequestDetail, signedIds: Set<number>): FormedDocument | null {
-  const statusName = req.status.name
-  if (
-    statusName !== REQUEST_STATUS.APPROVED &&
-    statusName !== REQUEST_STATUS.CLOSED &&
-    !signedIds.has(req.id)
-  ) {
-    return null
-  }
-
-  const file = req.document_files[0] ?? null
-  let status: FormedDocument['status']
-  if (signedIds.has(req.id) || statusName === REQUEST_STATUS.CLOSED) {
-    status = file ? 'Готов' : 'Подписан'
-  } else {
-    status = 'На подпись'
-  }
-
-  return {
-    id: req.id,
-    title: `${req.request_type.name} №${req.id}`,
-    date: req.updated_at || req.created_at,
-    status,
-    requestId: req.id,
-    file,
-  }
-}
-
-async function saveBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  return [
+    {
+      kind: 'passport',
+      title: 'Паспорт',
+      subtitle: 'Удостоверение личности',
+      previewLabel: 'Паспорт РФ',
+      filled: Boolean(data?.passport?.trim()),
+      valuePreview: data?.passport?.trim() || 'Данные не заполнены',
+    },
+    {
+      kind: 'snils',
+      title: 'СНИЛС',
+      subtitle: 'Страховое свидетельство',
+      previewLabel: 'СНИЛС',
+      filled: Boolean(data?.snils?.trim()),
+      valuePreview: data?.snils?.trim() || 'Данные не заполнены',
+    },
+    {
+      kind: 'military',
+      title: 'Военный билет',
+      subtitle: 'Воинский учёт',
+      previewLabel: 'Военный билет',
+      filled: Boolean(data?.military_id?.trim()),
+      valuePreview: data?.military_id?.trim() || 'Данные не заполнены',
+    },
+    {
+      kind: 'bank',
+      title: 'Банковские реквизиты',
+      subtitle: 'Счёт для выплат',
+      previewLabel: 'Реквизиты',
+      filled: bankParts.length > 0,
+      valuePreview: bankParts.length
+        ? [data?.bank_receiver, data?.account_number, data?.bik].filter(Boolean).join(' · ')
+        : 'Данные не заполнены',
+    },
+  ]
 }
 
 export function DocumentsPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const [filter, setFilter] = useState<DocFilter>('all')
-  const [docs, setDocs] = useState<FormedDocument[]>([])
-  const [signedIds, setSignedIds] = useState<Set<number>>(() => loadSignedIds())
+  const [privateData, setPrivateData] = useState<UserPrivateData | null>(null)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(true)
-  const [pendingId, setPendingId] = useState<number | null>(null)
+
+  const canPrivate = hasPermission(user, 'private_data:read_self', 'private_data:read_any')
 
   useEffect(() => {
     if (!user) return
@@ -88,15 +80,12 @@ export function DocumentsPage() {
       setLoading(true)
       setError('')
       try {
-        const list = await requestsApi.list()
-        const mine = list.filter((item) => item.employee_id === user!.id)
-        const details = await Promise.all(mine.map((item) => requestsApi.get(item.id)))
-        if (cancelled) return
-        const formed = details
-          .map((req) => mapDocument(req, signedIds))
-          .filter((item): item is FormedDocument => item != null)
-          .sort((a, b) => b.date.localeCompare(a.date))
-        setDocs(formed)
+        if (!canPrivate) {
+          if (!cancelled) setPrivateData(null)
+          return
+        }
+        const data = await usersApi.getPrivate(user!.id)
+        if (!cancelled) setPrivateData(data)
       } catch (err) {
         if (!cancelled) setError(errorMessage(err))
       } finally {
@@ -107,110 +96,75 @@ export function DocumentsPage() {
     return () => {
       cancelled = true
     }
-  }, [user, signedIds])
+  }, [user, canPrivate])
 
-  const visible = useMemo(() => {
-    if (filter === 'to_sign') return docs.filter((d) => d.status === 'На подпись')
-    if (filter === 'signed') return docs.filter((d) => d.status === 'Подписан' || d.status === 'Готов')
-    return docs
-  }, [docs, filter])
+  const docs = buildDocs(privateData)
 
-  async function onSign(doc: FormedDocument) {
-    setPendingId(doc.id)
-    setError('')
-    setInfo('')
-    try {
-      const res = await documentsApi.sign(doc.id)
-      const next = new Set(signedIds)
-      next.add(doc.id)
-      setSignedIds(next)
-      saveSignedIds(next)
-      setInfo(res.message || 'Документ отмечен как подписанный')
-    } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setPendingId(null)
-    }
-  }
-
-  async function onPdf(doc: FormedDocument) {
-    if (!doc.file) {
-      setInfo('PDF ещё не сформирован — файл появится позже')
-      setError('')
-      return
-    }
-    setError('')
-    setInfo('')
-    const blob = await requestsApi.download(doc.requestId, doc.file.id)
-    await saveBlob(blob, doc.file.name)
+  function onDownload(doc: PersonalDoc) {
+    setInfo(
+      doc.filled
+        ? `Скачивание «${doc.title}» пока недоступно — в API нет файла документа`
+        : `Сначала заполните «${doc.title}» в профиле`,
+    )
   }
 
   return (
     <>
       <h1 className="page-title">Документы</h1>
-
-      <div className="tabs">
-        {(
-          [
-            ['all', 'Все'],
-            ['to_sign', 'На подпись'],
-            ['signed', 'Подписанные'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={filter === id ? 'tab active' : 'tab'}
-            onClick={() => setFilter(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Паспорт, СНИЛС, военный билет и банковские реквизиты из профиля.
+      </p>
 
       {error && <p className="form-error">{error}</p>}
       {info && <p className="form-ok">{info}</p>}
 
-      <div className="card">
-        {loading && <p className="empty">Загрузка…</p>}
-        {!loading && visible.length === 0 && <p className="empty">Документов нет</p>}
-        {!loading &&
-          visible.map((doc) => (
-            <div key={doc.id} className="doc-row">
-              <div>
-                <div style={{ fontWeight: 600 }}>{doc.title}</div>
-                <div className="muted" style={{ marginTop: 4 }}>
-                  {formatDate(doc.date)}
+      {loading && <p className="empty">Загрузка…</p>}
+
+      {!loading && (
+        <div className="personal-docs-grid">
+          {docs.map((doc) => (
+            <article key={doc.kind} className={`personal-doc-card kind-${doc.kind}`}>
+              <div className={`personal-doc-preview kind-${doc.kind}`} aria-hidden>
+                <div className="personal-doc-preview-inner">
+                  <span className="personal-doc-preview-mark">{doc.previewLabel}</span>
+                  <span className="personal-doc-preview-lines">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
                 </div>
               </div>
-              <StatusBadge status={doc.status} />
-              <div className="actions">
-                {doc.status === 'На подпись' && (
+
+              <div className="personal-doc-body">
+                <div className="page-header" style={{ marginBottom: 8 }}>
+                  <div>
+                    <h3 className="section-title" style={{ margin: 0 }}>
+                      {doc.title}
+                    </h3>
+                    <p className="muted" style={{ margin: '4px 0 0' }}>
+                      {doc.subtitle}
+                    </p>
+                  </div>
+                  <StatusBadge status={doc.filled ? 'Заполнен' : 'Нет данных'} />
+                </div>
+
+                <p className="personal-doc-value">{doc.valuePreview}</p>
+
+                <div className="actions">
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
-                    disabled={pendingId === doc.id}
-                    onClick={() => void onSign(doc)}
+                    onClick={() => onDownload(doc)}
+                    title="Скачивание файла появится, когда бэкенд начнёт отдавать документ"
                   >
-                    Подписать
+                    Скачать
                   </button>
-                )}
-                {doc.status === 'На подпись' && (
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => navigate(`/requests/${doc.requestId}`)}
-                  >
-                    Редактировать
-                  </button>
-                )}
-                <button type="button" className="badge badge-pdf" onClick={() => void onPdf(doc)}>
-                  PDF
-                </button>
+                </div>
               </div>
-            </div>
+            </article>
           ))}
-      </div>
+        </div>
+      )}
     </>
   )
 }
