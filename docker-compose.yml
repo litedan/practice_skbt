@@ -33,6 +33,7 @@ services:
       UPLOAD_DIR: /app/uploads
     volumes:
       - backend_uploads:/app/uploads
+      - ./backend/app/templates:/app/app/templates
 
   frontend:
     build:

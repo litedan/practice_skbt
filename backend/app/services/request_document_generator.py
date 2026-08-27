@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.core.config import get_settings
+from app.core.template_fields import resolve_template_path
 from app.models.main.document_file import DocumentFile
 from app.models.main.request import Request
 from app.models.main.template import Template
@@ -173,17 +174,7 @@ class RequestDocumentGenerator:
             ./app/templates/zayavlenie_na_otpusk.docx
         """
 
-        file_path = Path(
-            template.file_path
-        )
-
-        if file_path.is_absolute():
-            return file_path
-
-        return (
-            Path(settings.document_templates_dir)
-            / file_path
-        )
+        return resolve_template_path(template.file_path)
 
     def _build_context(
         self,

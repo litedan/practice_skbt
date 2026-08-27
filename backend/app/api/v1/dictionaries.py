@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from sqlalchemy import select
 
 from app.api.deps import CurrentUser, MainDB
-from app.core.template_fields import get_template_fields
+from app.core.template_fields import get_template_fields, resolve_template_path
 from app.models.main.department import Department
 from app.models.main.position import Position
 from app.models.main.request_type import RequestType
@@ -50,7 +50,11 @@ async def get_templates(_: CurrentUser, db: MainDB) -> list[TemplateItem]:
             id=item.id,
             name=item.name,
             code=item.code,
-            fields=[field.__dict__ for field in get_template_fields(item.code)],
+            # Поля формы вытягиваются прямо из переменных
+            fields=[
+                field.__dict__
+                for field in get_template_fields(resolve_template_path(item.file_path))
+            ],
         )
         for item in result.scalars()
     ]
