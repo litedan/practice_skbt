@@ -1,10 +1,8 @@
-"""Простое нагрузочное тестирование для KEDO."""
+"""Нагрузочное тестирование для KEDO."""
 from locust import HttpUser, task, between
 import random
 from datetime import datetime, timedelta
 
-# Данные из вашего smoke-теста
-BASE = "/api/v1"
 PASS = "Password123!"
 USERS = {
     "employee": "employee@kedo.local",
@@ -15,113 +13,186 @@ USERS = {
 
 
 class KEDOLoadTest(HttpUser):
-    """Нагрузочный тест для всех ролей"""
-    
-    wait_time = between(1, 3)  # Пауза между запросами 1-3 секунды
-    
+    wait_time = between(1, 3)
+
     def on_start(self):
         """Авторизация при старте"""
-        # Выбираем случайную роль
         self.role = random.choice(list(USERS.keys()))
         self.email = USERS[self.role]
-        
+
+        # Добавляем заголовок User-Agent (как в Swagger)
+        headers = {"User-Agent": "Locust-Load-Test"}
+
         response = self.client.post(
-            f"{BASE}/auth/login",
-            json={"email": self.email, "password": PASS}
+            "/api/v1/auth/login",
+            json={"email": self.email, "password": PASS},
+            headers=headers
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             self.token = data.get("access_token")
-            self.headers = {"Authorization": f"Bearer {self.token}"}
-            self.user_id = None
-            
-            # Получаем свой ID для некоторых запросов
-            me = self.client.get(f"{BASE}/users/me", headers=self.headers)
-            if me.status_code == 200:
-                self.user_id = me.json().get("id")
+            self.headers = {
+                "Authorization": f"Bearer {self.token}",
+                "User-Agent": "Locust-Load-Test"
+            }
+            print(f"✅ {self.role} авторизован: {self.email}")
         else:
             self.token = None
             self.headers = {}
-            self.user_id = None
-    
-    @task(3)
+            print(f"❌ Ошибка авторизации {self.role}: {response.status_code} - {response.text[:100]}")
+
+    @task(4)
     def get_me(self):
-        """Получение своего профиля"""
-        if self.headers:
-            self.client.get(f"{BASE}/users/me", headers=self.headers)
-    
-    @task(3)
-    def get_requests(self):
-        """Получение списка заявок"""
-        if self.headers:
-            self.client.get(f"{BASE}/requests", headers=self.headers)
-    
-    @task(2)
-    def get_dictionaries(self):
-        """Получение справочников"""
-        if self.headers:
-            self.client.get(f"{BASE}/dictionaries/statuses", headers=self.headers)
-            self.client.get(f"{BASE}/dictionaries/request-types", headers=self.headers)
-    
-    @task(2)
-    def create_request(self):
-        """Создание заявки (только не для admin)"""
-        if not self.headers or self.role == "admin":
+        """GET /api/v1/users/me"""
+        if not self.headers:
             return
-        
-        # Получаем тип заявки
-        types_resp = self.client.get(
-            f"{BASE}/dictionaries/request-types",
+
+        with self.client.get(
+            "/api/v1/users/me",
+            headers=self.headers,
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}, Body: {response.text[:50]}")
+
+    @task(4)
+    def get_requests(self):
+        """GET /api/v1/requests"""
+        if not self.headers:
+            return
+
+        with self.client.get(
+            "/api/v1/requests",
+            headers=self.headers,
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}")
+
+    @task(3)
+    def get_dictionaries_statuses(self):
+        """GET /api/v1/dictionaries/statuses"""
+        if not self.headers:
+            return
+
+        self.client.get(
+            "/api/v1/dictionaries/statuses",
             headers=self.headers
         )
-        if types_resp.status_code != 200:
+
+    @task(3)
+    def get_dictionaries_request_types(self):
+        """GET /api/v1/dictionaries/request-types"""
+        if not self.headers:
             return
-        
+
+        self.client.get(
+            "/api/v1/dictionaries/request-types",
+            headers=self.headers
+        )
+
+    @task(2)
+    def create_request(self):
+        """POST /api/v1/requests"""
+        # Admin не создаёт заявки
+        if not self.headers or self.role == "admin":
+            return
+
+        # Получаем тип заявки
+        types_resp = self.client.get(
+            "/api/v1/dictionaries/request-types",
+            headers=self.headers
+        )
+
+        if types_resp.status_code != 200 or not types_resp.json():
+            return
+
         types = types_resp.json()
         if not types:
             return
-        
+
         type_id = types[0]["id"]
-        
-        # Создаём заявку
+
+        # Создаём заявку с датами
         start = datetime.now() + timedelta(days=random.randint(5, 30))
         end = start + timedelta(days=random.randint(3, 14))
-        
-        self.client.post(
-            f"{BASE}/requests",
+
+        with self.client.post(
+            "/api/v1/requests",
             headers=self.headers,
             json={
                 "request_type_id": type_id,
-                "comment": f"Нагрузочный тест {datetime.now().strftime('%H:%M:%S')}",
+                "comment": f"Load test {random.randint(1, 9999)}",
                 "start_date": start.strftime("%Y-%m-%d"),
                 "end_date": end.strftime("%Y-%m-%d"),
-            }
-        )
-    
+            },
+            catch_response=True
+        ) as response:
+            if response.status_code in [200, 201]:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}, Body: {response.text[:100]}")
+
     @task(1)
     def get_stats(self):
-        """Получение статистики (только для hr и admin)"""
+        """GET /api/v1/requests/stats (HR и Admin)"""
         if not self.headers or self.role not in ["hr", "admin"]:
             return
-        self.client.get(f"{BASE}/requests/stats", headers=self.headers)
-    
+
+        with self.client.get(
+            "/api/v1/requests/stats",
+            headers=self.headers,
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}")
+
     @task(1)
     def get_admin_users(self):
-        """Список пользователей (только для hr и admin)"""
+        """GET /api/v1/admin/users (HR и Admin)"""
         if not self.headers or self.role not in ["hr", "admin"]:
             return
-        self.client.get(f"{BASE}/admin/users", headers=self.headers)
-    
+
+        with self.client.get(
+            "/api/v1/admin/users",
+            headers=self.headers,
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}")
+
     @task(1)
-    def get_audit(self):
-        """Аудит (только для admin)"""
+    def get_admin_audit(self):
+        """GET /api/v1/admin/audit (только Admin)"""
         if not self.headers or self.role != "admin":
             return
-        self.client.get(f"{BASE}/admin/audit", headers=self.headers)
-    
-    @task(1)
+
+        with self.client.get(
+            "/api/v1/admin/audit",
+            headers=self.headers,
+            catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure(f"Status: {response.status_code}")
+
+    @task(2)
     def get_notifications(self):
-        """Уведомления"""
-        if self.headers:
-            self.client.get(f"{BASE}/notifications", headers=self.headers)
+        """GET /api/v1/notifications"""
+        if not self.headers:
+            return
+
+        self.client.get(
+            "/api/v1/notifications",
+            headers=self.headers
+        )
