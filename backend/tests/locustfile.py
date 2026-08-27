@@ -55,6 +55,7 @@ class KEDOLoadTest(HttpUser):
         ) as response:
             if response.status_code == 200:
                 response.success()
+                print(response)
             else:
                 response.failure(f"Status: {response.status_code}, Body: {response.text[:50]}")
 
