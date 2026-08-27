@@ -1,6 +1,4 @@
 # docker-compose.load-test.yml
-version: '3.8'
-
 services:
   locust:
     image: locustio/locust:2.20.0
@@ -8,16 +6,14 @@ services:
     ports:
       - "8089:8089"
     volumes:
-      - ./backend/tests/locustfile.py:/locust/locustfile.py
-      - ./reports:/locust/reports
-    environment:
-      - LOCUST_HOST=http://backend:8000
+      - ./backend/tests/locustfile.py:/home/locust/locustfile.py
+      - ./reports:/home/locust/reports
     command: >
       --host=http://backend:8000
+      -f /home/locust/locustfile.py
     networks:
-      - kedo_network
+      - practice_skbt_default
 
 networks:
-  kedo_network:
+  practice_skbt_default:
     external: true
-    name: kedo_default 
