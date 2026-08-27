@@ -3,7 +3,7 @@
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DocumentServiceDep
-from app.schemas.document import DocumentSignResponse
+from app.schemas.document import DocumentSignRequest, DocumentSignResponse
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -15,15 +15,12 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 )
 async def sign_document(
     document_id: int,
+    payload: DocumentSignRequest,
     current_user: CurrentUser,
     service: DocumentServiceDep,
 ) -> DocumentSignResponse:
-    """
-    Заглушка подписания документа.
-
-    В production здесь будет:
-    - проверка, что документ принадлежит пользователю;
-    - вызов криптопровайдера (ЭЦП/КЭП);
-    - сохранение подписи и timestamp в БД + audit_log.
-    """
-    return await service.sign_document(current_user=current_user, document_id=document_id)
+    return await service.sign_document(
+        current_user=current_user,
+        document_id=document_id,
+        password=payload.password,
+    )
