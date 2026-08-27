@@ -89,9 +89,10 @@ export const requestsApi = {
 }
 
 export const documentsApi = {
-  sign: (documentId: number) =>
+  sign: (documentId: number, password: string) =>
     api.post<{ document_id: number; status: string; message: string; signed_at: string | null }>(
       `/documents/${documentId}/sign`,
+      { password },
     ),
         generateDocument: (
     id: number,

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { dictionariesApi, documentsApi, requestsApi } from '../api/endpoints'
+import { dictionariesApi, documentsApi, login, requestsApi } from '../api/endpoints'
+import { useAuth } from '../auth/AuthContext'
 import { errorMessage } from '../lib/format'
 import type { RequestTypeItem, TemplateItem } from '../types/api'
 
@@ -14,6 +15,7 @@ function toRuDate(value: string) {
 
 export function RequestCreatePage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [types, setTypes] = useState<RequestTypeItem[]>([])
   const [typeId, setTypeId] = useState<number | ''>('')
   const [comment, setComment] = useState('')
@@ -25,6 +27,8 @@ export function RequestCreatePage() {
 
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const [signatureOpen, setSignatureOpen] = useState(false)
+  const [signaturePassword, setSignaturePassword] = useState('')
 
   useEffect(() => {
     dictionariesApi
@@ -60,12 +64,21 @@ export function RequestCreatePage() {
     setTemplateFields((prev) => ({ ...prev, [key]: value }))
   }
 
-  async function onSubmit(e: FormEvent) {
+  function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (typeId === '') return
+    setError('')
+    setSignatureOpen(true)
+  }
+
+  async function confirmSignature(e: FormEvent) {
     e.preventDefault()
     if (typeId === '') return
     setError('')
     setPending(true)
     try {
+      if (!user?.email) throw new Error('У текущего пользователя не указан email')
+      await login(user.email, signaturePassword)
       const created = await requestsApi.create({
         request_type_id: typeId,
         comment: comment.trim() || undefined,
@@ -79,12 +92,15 @@ export function RequestCreatePage() {
           const raw = templateFields[field.key]?.trim() ?? ''
           context[field.key] = field.type === 'date' && raw ? toRuDate(raw) : raw
         }
-        await documentsApi.generateDocument(created.id, {
+        const document = await documentsApi.generateDocument(created.id, {
           template_code: selectedTemplate.code,
           context,
         })
+        await documentsApi.sign(document.id, signaturePassword)
       }
 
+      setSignatureOpen(false)
+      setSignaturePassword('')
       navigate(`/requests/${created.id}`)
     } catch (err) {
       setError(errorMessage(err))
@@ -97,7 +113,7 @@ export function RequestCreatePage() {
     <>
       <h1 className="page-title">Новая заявка</h1>
 
-      <form className="card" style={{ maxWidth: 640, marginTop: 24 }} onSubmit={(e) => void onSubmit(e)}>
+      <form className="card" style={{ maxWidth: 640, marginTop: 24 }} onSubmit={onSubmit}>
         <div className="field">
           <label>Тип заявки</label>
           <select value={typeId} onChange={(e) => onTypeChange(Number(e.target.value))} required>
@@ -172,6 +188,37 @@ export function RequestCreatePage() {
           </button>
         </div>
       </form>
+
+      {signatureOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => !pending && setSignatureOpen(false)}>
+          <form className="modal" onSubmit={(e) => void confirmSignature(e)} onMouseDown={(e) => e.stopPropagation()}>
+            <h2>Подписать заявку</h2>
+            <p className="muted">Введите данные своей учётной записи для подтверждения отправки.</p>
+            <div className="field">
+              <label htmlFor="signature-email">Email</label>
+              <input id="signature-email" type="email" value={user?.email ?? ''} readOnly required autoFocus />
+            </div>
+            <div className="field">
+              <label htmlFor="signature-password">Пароль</label>
+              <input
+                id="signature-password"
+                type="password"
+                value={signaturePassword}
+                onChange={(e) => setSignaturePassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="actions">
+              <button className="btn btn-secondary" type="button" onClick={() => setSignatureOpen(false)} disabled={pending}>
+                Отмена
+              </button>
+              <button className="btn btn-primary" type="submit" disabled={pending}>
+                {pending ? 'Подписание…' : 'Подписать и отправить'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   )
 }
