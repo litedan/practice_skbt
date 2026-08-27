@@ -68,7 +68,6 @@ export function DocumentsPage() {
   const { user } = useAuth()
   const [privateData, setPrivateData] = useState<UserPrivateData | null>(null)
   const [error, setError] = useState('')
-  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(true)
 
   const canPrivate = hasPermission(user, 'private_data:read_self', 'private_data:read_any')
@@ -100,14 +99,6 @@ export function DocumentsPage() {
 
   const docs = buildDocs(privateData)
 
-  function onDownload(doc: PersonalDoc) {
-    setInfo(
-      doc.filled
-        ? `Скачивание «${doc.title}» пока недоступно — в API нет файла документа`
-        : `Сначала заполните «${doc.title}» в профиле`,
-    )
-  }
-
   return (
     <>
       <h1 className="page-title">Документы</h1>
@@ -116,7 +107,6 @@ export function DocumentsPage() {
       </p>
 
       {error && <p className="form-error">{error}</p>}
-      {info && <p className="form-ok">{info}</p>}
 
       {loading && <p className="empty">Загрузка…</p>}
 
@@ -149,17 +139,6 @@ export function DocumentsPage() {
                 </div>
 
                 <p className="personal-doc-value">{doc.valuePreview}</p>
-
-                <div className="actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => onDownload(doc)}
-                    title="Скачивание файла появится, когда бэкенд начнёт отдавать документ"
-                  >
-                    Скачать
-                  </button>
-                </div>
               </div>
             </article>
           ))}
