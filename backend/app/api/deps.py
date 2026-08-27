@@ -102,8 +102,8 @@ def get_notification_service(main_db: MainDB) -> NotificationService:
 NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
 
 
-def get_document_service() -> DocumentService:
-    return DocumentService()
+def get_document_service(main_db: MainDB) -> DocumentService:
+    return DocumentService(main_db)
 
 
 DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
