@@ -3,6 +3,7 @@
 import traceback
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.database import LogSessionLocal
@@ -49,6 +50,14 @@ class ConflictError(AppError):
         super().__init__(message, status_code=status.HTTP_409_CONFLICT, code="conflict")
 
 
+def _clean_validation_msg(msg: str) -> str:
+    prefixes = ("Value error, ", "value_error, ")
+    for prefix in prefixes:
+        if msg.startswith(prefix):
+            return msg[len(prefix) :]
+    return msg
+
+
 async def _write_system_event(
     *,
     endpoint: str | None,
@@ -79,6 +88,20 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.message, "code": exc.code},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(
+        _: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        messages: list[str] = []
+        for err in exc.errors():
+            msg = _clean_validation_msg(str(err.get("msg", "Ошибка валидации")))
+            messages.append(msg)
+        detail = "; ".join(messages) if messages else "Ошибка валидации"
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": detail, "code": "validation_error"},
         )
 
     @app.exception_handler(Exception)
