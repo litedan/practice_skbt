@@ -241,7 +241,7 @@ export function ProfilePage() {
                   fieldKey="inn"
                   value={privateData.inn ?? ''}
                   placeholder="12 цифр"
-                  max={12}
+                  maxLength={999999999999}
                   error={fieldErrors.inn}
                   onChange={setPrivateField}
                   type="number"
@@ -274,7 +274,7 @@ export function ProfilePage() {
                   value={privateData.account_number ?? ''}
                   placeholder="20 цифр"
                   type="number"
-                  maxLength={20}
+                  maxLength={99999999999999999999}
                   error={fieldErrors.account_number}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -285,7 +285,7 @@ export function ProfilePage() {
                   value={privateData.correspondent_account ?? ''}
                   placeholder="20 цифр"
                   type="number"
-                  maxLength={20}
+                  maxLength={99999999999999999999}
                   error={fieldErrors.correspondent_account}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -296,7 +296,7 @@ export function ProfilePage() {
                   value={privateData.bik ?? ''}
                   placeholder="9 цифр"
                   type="number"
-                  maxLength={9}
+                  maxLength={999999999}
                   error={fieldErrors.bik}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -307,7 +307,7 @@ export function ProfilePage() {
                   value={privateData.kpp ?? ''}
                   placeholder="9 цифр"
                   type="number"
-                  maxLength={9}
+                  maxLength={999999999}
                   error={fieldErrors.kpp}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -405,7 +405,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         type={type}
-        maxLength={maxLength}
+        max={maxLength}
         className={error ? 'invalid' : undefined}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `pd-${fieldKey}-error` : undefined}
