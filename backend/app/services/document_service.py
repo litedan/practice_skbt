@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from docx import Document
 from sqlalchemy import select
@@ -50,7 +51,7 @@ class DocumentService:
                 "ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ\n\n"
                 f"Подписал: {current_user.full_name}\n"
                 f"{position}\n"
-                f"Дата: {signed_at.astimezone().strftime('%d.%m.%Y %H:%M')}"
+                f"Дата: {signed_at.astimezone(ZoneInfo('Europe/Moscow')).strftime('%d.%m.%Y %H:%M')}"
             )
             document.save(str(path))
 
