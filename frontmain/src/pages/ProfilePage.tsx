@@ -241,7 +241,7 @@ export function ProfilePage() {
                   fieldKey="inn"
                   value={privateData.inn ?? ''}
                   placeholder="12 цифр"
-                  maxLength={12}
+                  max={12}
                   error={fieldErrors.inn}
                   onChange={setPrivateField}
                   type="number"
