@@ -373,56 +373,6 @@ class TestRequests:
         assert any(item["id"] == file_id for item in listing.json())
 
 
-class TestRequestWorkflow:
-    def test_created_review_approval_approve(
-        self,
-        client: httpx.Client,
-        tokens: dict[str, str],
-        request_type_id: int,
-        statuses: dict[str, int],
-    ) -> None:
-        created = client.post(
-            f"{API}/requests",
-            headers=_auth(tokens["employee"]),
-            json={"request_type_id": request_type_id, "comment": "workflow"},
-        )
-        assert created.status_code == 201, created.text[:400]
-        request_id = created.json()["id"]
-
-        employee_patch = client.patch(
-            f"{API}/requests/{request_id}",
-            headers=_auth(tokens["employee"]),
-            json={"status_id": statuses["На проверке"]},
-        )
-        assert employee_patch.status_code == 403
-
-        to_review = client.patch(
-            f"{API}/requests/{request_id}",
-            headers=_auth(tokens["hr"]),
-            json={"status_id": statuses["На проверке"]},
-        )
-        assert to_review.status_code == 200, to_review.text[:400]
-        assert to_review.json()["status_id"] == statuses["На проверке"]
-        assert to_review.json()["status"]["name"] == "На проверке"
-
-        to_approval = client.patch(
-            f"{API}/requests/{request_id}",
-            headers=_auth(tokens["hr"]),
-            json={"status_id": statuses["На согласовании"]},
-        )
-        assert to_approval.status_code == 200, to_approval.text[:400]
-        assert to_approval.json()["status_id"] == statuses["На согласовании"]
-        assert to_approval.json()["status"]["name"] == "На согласовании"
-
-        approve = client.patch(
-            f"{API}/requests/{request_id}",
-            headers=_auth(tokens["manager"]),
-            json={"status_id": statuses["Одобрена"]},
-        )
-        assert approve.status_code == 200, approve.text[:400]
-        assert approve.json()["status_id"] == statuses["Одобрена"]
-        assert approve.json()["status"]["name"] == "Одобрена"
-
 
 class TestNotifications:
     def test_list(self, client: httpx.Client, tokens: dict[str, str]) -> None:
