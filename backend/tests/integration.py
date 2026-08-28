@@ -402,6 +402,7 @@ class TestRequestWorkflow:
             json={"status_id": statuses["На проверке"]},
         )
         assert to_review.status_code == 200, to_review.text[:400]
+        assert to_review.json()["status_id"] == statuses["На проверке"]
         assert to_review.json()["status"]["name"] == "На проверке"
 
         to_approval = client.patch(
@@ -410,6 +411,7 @@ class TestRequestWorkflow:
             json={"status_id": statuses["На согласовании"]},
         )
         assert to_approval.status_code == 200, to_approval.text[:400]
+        assert to_approval.json()["status_id"] == statuses["На согласовании"]
         assert to_approval.json()["status"]["name"] == "На согласовании"
 
         approve = client.patch(
@@ -418,6 +420,7 @@ class TestRequestWorkflow:
             json={"status_id": statuses["Одобрена"]},
         )
         assert approve.status_code == 200, approve.text[:400]
+        assert approve.json()["status_id"] == statuses["Одобрена"]
         assert approve.json()["status"]["name"] == "Одобрена"
 
 
@@ -472,7 +475,11 @@ class TestAdmin:
         assert audit.status_code == 200
         assert isinstance(audit.json(), list)
 
-        users = client.get(f"{API}/admin/users", headers=_auth(tokens["admin"]))
+        users = client.get(
+            f"{API}/admin/users",
+            headers=_auth(tokens["admin"]),
+            params={"search": USERS["employee"], "limit": 200},
+        )
         assert users.status_code == 200
         emails = {item["email"] for item in users.json()}
         assert USERS["employee"] in emails
