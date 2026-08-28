@@ -241,8 +241,10 @@ export function ProfilePage() {
                   fieldKey="inn"
                   value={privateData.inn ?? ''}
                   placeholder="12 цифр"
+                  maxLength={12}
                   error={fieldErrors.inn}
                   onChange={setPrivateField}
+                  type="number"
                   onBlur={touchField}
                 />
                 <Field
@@ -271,6 +273,8 @@ export function ProfilePage() {
                   fieldKey="account_number"
                   value={privateData.account_number ?? ''}
                   placeholder="20 цифр"
+                  type="number"
+                  maxLength={20}
                   error={fieldErrors.account_number}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -280,6 +284,8 @@ export function ProfilePage() {
                   fieldKey="correspondent_account"
                   value={privateData.correspondent_account ?? ''}
                   placeholder="20 цифр"
+                  type="number"
+                  maxLength={20}
                   error={fieldErrors.correspondent_account}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -289,6 +295,8 @@ export function ProfilePage() {
                   fieldKey="bik"
                   value={privateData.bik ?? ''}
                   placeholder="9 цифр"
+                  type="number"
+                  maxLength={9}
                   error={fieldErrors.bik}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -298,6 +306,8 @@ export function ProfilePage() {
                   fieldKey="kpp"
                   value={privateData.kpp ?? ''}
                   placeholder="9 цифр"
+                  type="number"
+                  maxLength={9}
                   error={fieldErrors.kpp}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -374,6 +384,8 @@ function Field({
   onBlur,
   placeholder,
   error,
+  type='text',
+  maxLength=30,
 }: {
   label: string
   fieldKey: PrivateFieldKey
@@ -382,6 +394,8 @@ function Field({
   onBlur: (key: PrivateFieldKey) => void
   placeholder?: string
   error?: string
+  type?: string
+  maxLength?: number
 }) {
   return (
     <div className="field">
@@ -390,6 +404,8 @@ function Field({
         id={`pd-${fieldKey}`}
         value={value}
         placeholder={placeholder}
+        type={type}
+        maxLength={maxLength}
         className={error ? 'invalid' : undefined}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `pd-${fieldKey}-error` : undefined}
