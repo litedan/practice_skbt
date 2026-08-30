@@ -243,6 +243,7 @@ export function ProfilePage() {
                   placeholder="12 цифр"
                   error={fieldErrors.inn}
                   onChange={setPrivateField}
+                  type="number"
                   onBlur={touchField}
                 />
                 <Field
@@ -271,6 +272,7 @@ export function ProfilePage() {
                   fieldKey="account_number"
                   value={privateData.account_number ?? ''}
                   placeholder="20 цифр"
+                  type="number"
                   error={fieldErrors.account_number}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -280,6 +282,7 @@ export function ProfilePage() {
                   fieldKey="correspondent_account"
                   value={privateData.correspondent_account ?? ''}
                   placeholder="20 цифр"
+                  type="number"
                   error={fieldErrors.correspondent_account}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -289,6 +292,7 @@ export function ProfilePage() {
                   fieldKey="bik"
                   value={privateData.bik ?? ''}
                   placeholder="9 цифр"
+                  type="number"
                   error={fieldErrors.bik}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -298,6 +302,7 @@ export function ProfilePage() {
                   fieldKey="kpp"
                   value={privateData.kpp ?? ''}
                   placeholder="9 цифр"
+                  type="number"
                   error={fieldErrors.kpp}
                   onChange={setPrivateField}
                   onBlur={touchField}
@@ -374,6 +379,7 @@ function Field({
   onBlur,
   placeholder,
   error,
+  type='text',
 }: {
   label: string
   fieldKey: PrivateFieldKey
@@ -382,6 +388,7 @@ function Field({
   onBlur: (key: PrivateFieldKey) => void
   placeholder?: string
   error?: string
+  type?: string
 }) {
   return (
     <div className="field">
@@ -390,6 +397,7 @@ function Field({
         id={`pd-${fieldKey}`}
         value={value}
         placeholder={placeholder}
+        type={type}
         className={error ? 'invalid' : undefined}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `pd-${fieldKey}-error` : undefined}
